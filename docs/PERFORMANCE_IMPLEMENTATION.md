@@ -18,7 +18,7 @@ Completed all 5 Performance & Scalability roadmap items for AppWhistler's LAUNCH
 
 ## 📦 1. Redis Caching Layer (Component: `src/backend/utils/cacheManager.js`)
 
-### Implementation Details
+### Implementation Details for Redis
 
 **File:** `src/backend/utils/cacheManager.js` (170 lines)
 
@@ -26,7 +26,7 @@ Completed all 5 Performance & Scalability roadmap items for AppWhistler's LAUNCH
 - Auto-connects to Redis via `REDIS_URL` environment variable
 - Falls back to in-memory Map for development/testing
 
-### Key Features
+### Key Features for Redis
 
 ```javascript
 // Automatic cache layer wrapping
@@ -40,14 +40,15 @@ const trendingApps = await cacheManager.getOrSet(cacheKey, async () => {
 - **TTL support** - Automatic expiration
 - **Error handling** - Graceful failures
 
-### Integration Points
+### Integration Points for Redis
 
 **Updated Resolvers** (`src/backend/resolvers.js`):
+
 - `trendingApps` query - 5-minute cache
 - `apps` query (filtered, non-search) - 10-minute cache
 - Cache invalidation on `verifyApp` mutation
 
-### Tests
+### Tests for Redis
 
 **File:** `tests/unit/utils/cacheManager.test.js` (14 tests)
 
@@ -64,13 +65,14 @@ const trendingApps = await cacheManager.getOrSet(cacheKey, async () => {
 
 ## 🏊 2. Connection Pooling Tuning (Component: `src/backend/utils/poolMonitor.js`)
 
-### Implementation Details
+### Implementation Details for Pool Monitoring
 
 **Files:**
+
 - `src/backend/utils/poolMonitor.js` (204 lines) - Monitoring utility
 - `src/backend/server.js` - Integration with `/health/db-pool` endpoint
 
-### Key Features
+### Key Features for Pool Monitoring
 
 ```javascript
 const poolMonitor = new PoolMonitor(pool);
@@ -91,7 +93,7 @@ const health = poolMonitor.getHealthStatus();
 // { status: "healthy|degraded|unhealthy", issues: [], diagnostics }
 ```
 
-### Configuration
+### Configuration for Pool
 
 Environment variables (configurable via secrets):
 
@@ -135,7 +137,7 @@ Returns real-time pool diagnostics:
 - **Degraded**: 5-25% error rate, 90%+ utilization, or P99 > timeout
 - **Unhealthy**: All connections in use or > 25% error rate
 
-### Tests
+### Tests for Pool Monitoring
 
 **File:** `tests/unit/utils/poolMonitor.test.js` (27 tests)
 
@@ -152,11 +154,11 @@ Returns real-time pool diagnostics:
 
 ## 🛡️ 3. GraphQL Complexity Limits (Component: `src/backend/middleware/graphqlComplexity.js`)
 
-### Implementation Details
+### Implementation Details for GraphQL Complexity
 
 **File:** `src/backend/middleware/graphqlComplexity.js` (182 lines)
 
-### Configuration
+### Configuration for GraphQL Complexity
 
 ```bash
 GRAPHQL_MAX_DEPTH=10              # Max nesting level
@@ -166,6 +168,7 @@ GRAPHQL_MAX_COMPLEXITY=1000       # Max query cost
 ### How It Works
 
 **Query Depth:** Counts maximum nesting level
+
 ```graphql
 # Depth = 3
 {
@@ -179,7 +182,7 @@ GRAPHQL_MAX_COMPLEXITY=1000       # Max query cost
 
 **Query Complexity:** Cost-based calculation
 
-```
+```text
 Field costs:
 - Default field: 1
 - factChecks: 5
@@ -192,6 +195,7 @@ Multiplier for lists:
 ```
 
 Example: `apps(limit: 50) { factChecks { verdict } }`
+
 - apps field: 5
 - limit multiplier: 50
 - Complexity: 5 × 50 = 250
@@ -239,9 +243,10 @@ const apolloServer = new ApolloServer({
 
 ## 📋 4. Background Job Queue (Component: `src/backend/queues/jobManager.js`)
 
-### Implementation Details
+### Implementation Details for Job Queue
 
 **Files:**
+
 - `src/backend/queues/jobManager.js` (219 lines) - Core queue manager
 - `src/backend/queues/jobHandlers.js` (96 lines) - Job handlers
 - `src/backend/server.js` - Worker registration and graceful shutdown
@@ -249,6 +254,7 @@ const apolloServer = new ApolloServer({
 ### Job Types
 
 #### Email Jobs
+
 ```javascript
 await jobManager.submitJob('email-jobs', {
   type: 'welcome',
@@ -260,6 +266,7 @@ await jobManager.submitJob('email-jobs', {
 Supported types: `welcome`, `password-reset`, `notification`
 
 #### Blockchain Jobs
+
 ```javascript
 await jobManager.submitJob('blockchain-jobs', {
   type: 'stamp-fact-check',
@@ -271,6 +278,7 @@ await jobManager.submitJob('blockchain-jobs', {
 Supported types: `stamp-fact-check`, `record-donation`
 
 #### Fact-Check Jobs
+
 ```javascript
 await jobManager.submitJob('fact-check-jobs', {
   type: 'verify-claim',
@@ -282,12 +290,14 @@ await jobManager.submitJob('fact-check-jobs', {
 ### Modes
 
 **Production (Redis available):**
+
 - Uses Bull/BullMQ with Redis backing
 - Persistent job queue
 - Worker processes
 - Automatic retries (3 attempts, exponential backoff)
 
 **Development/Testing (no Redis):**
+
 - Falls back to in-memory execution
 - Jobs execute immediately
 - Handler called synchronously
@@ -300,7 +310,7 @@ await jobManager.close(); // Drain queues, close workers
 await pool.end();
 ```
 
-### Tests
+### Tests for Job Queue
 
 **File:** `tests/unit/queues/jobManager.test.js` (20 tests)
 
@@ -317,14 +327,15 @@ await pool.end();
 
 ## 🌐 5. CDN Setup (Component: `src/config/cdnConfig.js`)
 
-### Implementation Details
+### Implementation Details for CDN
 
 **Files:**
+
 - `src/config/cdnConfig.js` (166 lines) - CDN configuration utility
 - `src/frontend/vite.config.js` - Vite build configuration
 - `docs/cdn-setup.md` - Comprehensive setup guide
 
-### Configuration
+### Configuration for CDN
 
 ```bash
 CDN_URL=https://cdn.example.com          # CDN domain
@@ -357,7 +368,8 @@ export default defineConfig({
 ### Asset Organization
 
 Build output structure:
-```
+
+```text
 dist/
 ├── js/
 │   ├── vendor-[hash].js      (1 year cache)
@@ -375,6 +387,7 @@ dist/
 ### CDN Configuration Helpers
 
 **CloudFlare:**
+
 ```javascript
 cdnConfig.getCloudFlareConfig()
 // Returns Page Rules configuration
@@ -382,6 +395,7 @@ cdnConfig.getCloudFlareConfig()
 ```
 
 **AWS CloudFront:**
+
 ```javascript
 cdnConfig.getCloudFrontConfig()
 // Returns Distribution configuration
@@ -391,12 +405,13 @@ cdnConfig.getCloudFrontConfig()
 ### Cache Headers
 
 Automatic by content type:
+
 - **JavaScript/CSS**: 1 year (immutable)
 - **Images**: 30 days (stale-while-revalidate)
 - **Fonts**: 1 year (immutable)
 - **HTML**: No cache
 
-### Tests
+### Tests for CDN
 
 **File:** `tests/unit/config/cdnConfig.test.js` (26 tests)
 
@@ -409,11 +424,12 @@ Automatic by content type:
 
 **Status:** All passing ✅
 
-### Documentation
+### Documentation for CDN
 
 **File:** `docs/cdn-setup.md` (250+ lines)
 
 Comprehensive guide covering:
+
 - CloudFlare setup (Page Rules, SSL, Performance)
 - AWS CloudFront configuration
 - Asset organization strategy
@@ -429,7 +445,7 @@ Comprehensive guide covering:
 
 ### Test Execution
 
-```
+```bash
 Test Suites: 12 passed, 12 total
 Tests: 138 passed, 138 total
 Coverage: 75.96% statements, 88.7% functions
@@ -571,6 +587,7 @@ All 5 Performance & Scalability items implemented, tested, and documented.
 **Ready for:** Production deployment, monitoring, and ongoing optimization.
 
 **Next Steps:**
+
 1. Load testing with k6/Artillery
 2. Monitor cache hit rates in production
 3. Adjust TTLs based on usage patterns

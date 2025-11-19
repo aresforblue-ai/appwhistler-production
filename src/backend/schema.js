@@ -112,8 +112,40 @@ const typeDefs = gql`
     blockchainHash: String
     upvotes: Int!
     downvotes: Int!
+    appeals: [FactCheckAppeal!]
+    sourceCredibilityScore: Float
     createdAt: DateTime!
     updatedAt: DateTime!
+  }
+
+  # Fact-check appeal type (user challenges verdict)
+  type FactCheckAppeal {
+    id: ID!
+    factCheck: FactCheck!
+    submittedBy: User!
+    proposedVerdict: String!
+    reasoning: String!
+    evidence: String
+    supportingLinks: [String!]
+    status: String!
+    reviewedBy: User
+    reviewedAt: DateTime
+    createdAt: DateTime!
+  }
+
+  # Blockchain transaction record
+  type BlockchainTransaction {
+    id: ID!
+    hash: String!
+    type: String!
+    status: String!
+    user: User!
+    factCheckId: ID
+    description: String
+    timestamp: Int
+    blockNumber: Int
+    gasUsed: String
+    createdAt: DateTime!
   }
 
   # User review type
@@ -293,6 +325,14 @@ const typeDefs = gql`
     bounties(status: String): [Bounty!]!
     bounty(id: ID!): Bounty
 
+    # Blockchain & Transactions
+    userTransactions(walletAddress: String, userId: ID): [BlockchainTransaction!]!
+    transaction(hash: String!): BlockchainTransaction
+
+    # Fact-check appeals
+    factCheckAppeals(factCheckId: ID, status: String): [FactCheckAppeal!]!
+    factCheckAppeal(id: ID!): FactCheckAppeal
+
     # Admin queries (require admin/moderator role)
     pendingApps(limit: Int, offset: Int): AppConnection!
     pendingFactChecks(limit: Int, offset: Int): FactCheckConnection!
@@ -368,6 +408,30 @@ const typeDefs = gql`
     updateUserProfile(userId: ID!, bio: String, avatar: String, socialLinks: [SocialLinkInput!]): User!
     updateUserPreferences(userId: ID!, preferences: PreferencesInput!): User!
     updateAvatar(avatarUrl: String!, thumbnailUrl: String, ipfsHash: String!): User!
+
+    # Blockchain transactions
+    recordBlockchainTransaction(
+      hash: String!
+      type: String!
+      status: String!
+      factCheckId: ID
+      description: String
+    ): BlockchainTransaction!
+
+    # Fact-check appeals (user challenges verdicts)
+    submitFactCheckAppeal(
+      factCheckId: ID!
+      proposedVerdict: String!
+      reasoning: String!
+      evidence: String
+      supportingLinks: [String!]
+    ): FactCheckAppeal!
+
+    reviewFactCheckAppeal(
+      appealId: ID!
+      approved: Boolean!
+      newVerdict: String
+    ): FactCheckAppeal!
 
     # Admin mutations (require admin/moderator role)
     verifyApp(id: ID!): App!
