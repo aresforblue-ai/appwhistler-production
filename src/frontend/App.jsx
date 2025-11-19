@@ -5,6 +5,11 @@
 import React, { useState, useEffect } from 'react';
 import './App.css'; // Tailwind CSS imported here
 
+const API_BASE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
+  process.env.REACT_APP_API_URL ||
+  'http://localhost:5000';
+
 const HERO_FEATURES = [
   'Realtime disinformation radar',
   'AI-vetted developer reputation',
@@ -85,7 +90,7 @@ function App() {
   // Fetch apps from backend
   const searchApps = async (query) => {
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/v1/apps/trending?search=${query}`);
+      const response = await fetch(`${API_BASE_URL}/api/v1/apps/trending?search=${query}`);
       if (!response.ok) throw new Error('Failed to fetch');
       const data = await response.json();
       if (data.success) {

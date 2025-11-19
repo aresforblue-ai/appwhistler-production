@@ -11,6 +11,12 @@ Expanding to NewsTruth, FinanceTruth, HealthTruth, and beyond.
 
 Made with ❤️ in Beaumont, Texas by Tyler Hughes (@AppWhistler) — November 2025
 
+## Frontend Overview
+
+- React 18 + Vite + Tailwind UI with discover/fact-check/profile tabs, live dark mode, and fact-check scaffolding.
+- Run `npm run dev` for the full stack or `npm run client` to focus on the Vite app (see `src/frontend/README.md` for the full playbook).
+- API calls point to `http://localhost:5000` by default and respect `VITE_API_URL` overrides so the UI stays in sync with the backend env.
+
 ## Privacy & Compliance Highlights
 
 - `POST /api/v1/privacy/export` — authenticated users can download a JSON export of their account, reviews, fact-checks, bounties, and recent activity logs.
