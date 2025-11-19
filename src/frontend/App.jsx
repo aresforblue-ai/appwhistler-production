@@ -428,19 +428,14 @@ function DiscoverTab({
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Trending integrity signals</p>
-            <h3 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              {hasResults ? 'Precision-ranked apps' : 'Ready when you are'}
-            </h3>
-          </div>
-            // WARNING: Using index as key fallback. Ensure app.id is unique and stable for best results.
-            apps.map((app, idx) => (
-              <AppCard key={app.id ?? idx} app={app} darkMode={darkMode} />
-            ))
+          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Trending integrity signals</p>
+          <h3 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+            {hasResults ? 'Precision-ranked apps' : 'Ready when you are'}
+          </h3>
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {hasResults ? (
-            apps.map(app => <AppCard key={app.id || app.name} app={app} darkMode={darkMode} />)
+            apps.map((app, idx) => <AppCard key={app.id || app.name || idx} app={app} darkMode={darkMode} />)
           ) : (
             <EmptyState darkMode={darkMode} query={searchQuery} />
           )}
@@ -619,14 +614,14 @@ function FactCheckTab({ factChecks, darkMode }) {
           } focus:outline-none focus:ring-2 focus:ring-blue-500/50`}
           rows={4}
         />
-          <p className="text-xs text-slate-500">Use clear, attributable language for faster routing.</p>
+        <div className="mt-4 flex items-center justify-between">
+          <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Use clear, attributable language for faster routing.</p>
           <button 
             onClick={submitClaim}
             className="rounded-2xl bg-gradient-to-r from-emerald-400 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-400/30"
           >
             Verify Claim
           </button>
-          <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Use clear, attributable language for faster routing.</p>
         </div>
       </div>
 
@@ -741,8 +736,7 @@ function ProfileStatCard({ label, value, hint, darkMode }) {
     </div>
   );
 }
-
-  const handleLogin = () => {
+/**
  * Simple Auth Modal (placeholder)
  */
 function AuthModal({ onClose, setUser, darkMode }) {
@@ -807,14 +801,13 @@ function AuthModal({ onClose, setUser, darkMode }) {
 function Footer({ darkMode }) {
   return (
     <footer className={`${darkMode ? 'bg-slate-950/70 border-white/5' : 'bg-white border-slate-200'} border-t mt-12 backdrop-blur`}>
-            <a href="https://github.com/appwhistler/appwhistler" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <button type="button" onClick={() => { /* TODO: Implement Donate action */ }} className="hover:underline">Donate</button>
-            <button type="button" onClick={() => { /* TODO: Implement About action */ }} className="hover:underline">About</button>
-            <button type="button" onClick={() => { /* TODO: Implement Status action */ }} className="hover:underline">Status</button>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
             <p className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Community-owned trust infrastructure</p>
           </div>
           <div className="flex flex-wrap gap-4 text-sm font-semibold text-blue-400">
-            <a href="#">GitHub</a>
+            <a href="https://github.com/appwhistler/appwhistler" target="_blank" rel="noopener noreferrer">GitHub</a>
             <a href="#">Donate</a>
             <a href="#">About</a>
             <a href="#">Status</a>
