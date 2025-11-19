@@ -27,6 +27,10 @@ const { validateEnvironment, printValidationResults, getFeatureFlags } = require
 const { createBatchLoaders } = require('./utils/dataLoader');
 const { authenticateToken } = require('./middleware/auth');
 const { perUserRateLimiter } = require('./middleware/rateLimiter');
+const PoolMonitor = require('./utils/poolMonitor');
+const { createComplexityPlugin } = require('./middleware/graphqlComplexity');
+const jobManager = require('./queues/jobManager');
+const { handleEmailJob, handleBlockchainJob, handleFactCheckJob } = require('./queues/jobHandlers');
 const createPrivacyRouter = require('./routes/privacy');
 
 // Validate environment before starting
@@ -45,6 +49,7 @@ const httpServer = createServer(app);
 
 // PostgreSQL connection pool (reuses connections for performance)
 const pool = new Pool(getDatabaseConfig());
+const poolMonitor = new PoolMonitor(pool);
 
 const NODE_ENV = getSecret('NODE_ENV', 'development');
 const SENTRY_DSN = getSecret('SENTRY_DSN');
@@ -69,6 +74,13 @@ pool.query('SELECT NOW()', (err, res) => {
   }
   console.log('✅ Database connected at:', res.rows[0].now);
 });
+
+// Initialize background job queues and register workers
+jobManager.registerWorker('email-jobs', handleEmailJob);
+jobManager.registerWorker('blockchain-jobs', handleBlockchainJob);
+jobManager.registerWorker('fact-check-jobs', handleFactCheckJob);
+
+console.log('✅ Background job queues initialized');
 
 // Middleware: Security headers (protects against common attacks)
 const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [
@@ -141,6 +153,19 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Database pool health and diagnostics endpoint
+app.get('/health/db-pool', (req, res) => {
+  const { status, issues, diagnostics } = poolMonitor.getHealthStatus();
+  
+  const statusCode = status === 'healthy' ? 200 : status === 'degraded' ? 202 : 503;
+  
+  res.status(statusCode).json({
+    status,
+    issues,
+    ...diagnostics
+  });
+});
+
 // REST API example endpoint (for quick actions)
 app.get('/api/v1/apps/trending', async (req, res) => {
   try {
@@ -162,6 +187,7 @@ app.get('/api/v1/apps/trending', async (req, res) => {
 const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
+  plugins: [createComplexityPlugin()],
   context: ({ req }) => {
     // Initialize batch loaders for this request to prevent N+1 queries
     const loaders = createBatchLoaders(pool);
@@ -251,6 +277,7 @@ app.use((err, req, res, next) => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
+  await jobManager.close(); // Close job queues first
   await pool.end();
   httpServer.close(() => {
     console.log('Server closed');

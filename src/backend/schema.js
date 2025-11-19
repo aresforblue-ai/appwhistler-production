@@ -15,14 +15,63 @@ const typeDefs = gql`
     email: String!
     walletAddress: String
     truthScore: Int!
+    reputation: Int
     isVerified: Boolean!
     role: String!
     avatarUrl: String
+    avatar: String
     avatarThumbnailUrl: String
     avatarUploadedAt: DateTime
+    bio: String
+    socialLinks: [SocialLink!]
+    preferences: UserPreferences
     createdAt: DateTime!
     reviews: [Review!]
     factChecks: [FactCheck!]
+  }
+
+  type SocialLink {
+    platform: String!
+    url: String!
+  }
+
+  input SocialLinkInput {
+    platform: String!
+    url: String!
+  }
+
+  type UserPreferences {
+    notifications: NotificationPreferences!
+    privacy: PrivacyPreferences!
+    theme: String!
+  }
+
+  type NotificationPreferences {
+    email: Boolean!
+    push: Boolean!
+    inApp: Boolean!
+  }
+
+  type PrivacyPreferences {
+    profileVisibility: String!
+    showReputation: Boolean!
+  }
+
+  input PreferencesInput {
+    notifications: NotificationPreferencesInput
+    privacy: PrivacyPreferencesInput
+    theme: String
+  }
+
+  input NotificationPreferencesInput {
+    email: Boolean
+    push: Boolean
+    inApp: Boolean
+  }
+
+  input PrivacyPreferencesInput {
+    profileVisibility: String
+    showReputation: Boolean
   }
 
   # App recommendation type
@@ -314,8 +363,10 @@ const typeDefs = gql`
     claimBounty(id: ID!): Bounty!
     completeBounty(id: ID!, factCheckId: ID!): Bounty!
 
-    # User actions
-    updateProfile(username: String, walletAddress: String): User!
+    # User profile and preferences
+    updateProfile(userId: ID!, bio: String, avatar: String, socialLinks: [SocialLinkInput!]): User!
+    updateUserProfile(userId: ID!, bio: String, avatar: String, socialLinks: [SocialLinkInput!]): User!
+    updateUserPreferences(userId: ID!, preferences: PreferencesInput!): User!
     updateAvatar(avatarUrl: String!, thumbnailUrl: String, ipfsHash: String!): User!
 
     # Admin mutations (require admin/moderator role)
@@ -346,6 +397,18 @@ const typeDefs = gql`
     factCheckAdded(category: String): FactCheck!
     bountyCreated: Bounty!
     appVerified(id: ID!): App!
+    notificationAdded(userId: ID!): Notification!
+  }
+
+  type Notification {
+    id: ID!
+    userId: ID!
+    type: String!
+    title: String!
+    message: String!
+    data: JSON
+    read: Boolean!
+    createdAt: DateTime!
   }
 `;
 

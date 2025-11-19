@@ -40,13 +40,13 @@
 
 ### 4. Performance & Scalability
 
-- [x] **Database indexing** - Add indexes on frequent query columns (truth_rating, created_at, category)
-- [ ] **Connection pooling tuning** - Benchmark and optimize pg.Pool settings
-- [ ] **Redis caching** - Cache frequent queries, fact-check results, leaderboard
-- [ ] **CDN setup** - CloudFlare for static assets, API caching
-- [x] **Image optimization** - Compress/resize uploaded images, generate thumbnails
-- [ ] **GraphQL query complexity limits** - Prevent abuse of nested queries
-- [ ] **Background job queue** - Bull/BullMQ for scraping, blockchain transactions, email sending
+        - [x] **Database indexing** - Add indexes on frequent query columns (truth_rating, created_at, category) ✅ COMPLETE (Nov 2025)
+        - [x] **Connection pooling tuning** - Benchmark and optimize pg.Pool settings ✅ COMPLETE (Nov 2025) - Added /health/db-pool endpoint with diagnostics
+        - [x] **Redis caching** - Cache frequent queries, fact-check results, leaderboard ✅ COMPLETE (Nov 2025) - Integrated with trending apps and filtered queries
+        - [x] **CDN setup** - CloudFlare for static assets, API caching ✅ COMPLETE (Nov 2025) - Added CDN_URL support, Vite config, CloudFlare/CloudFront docs
+        - [x] **Image optimization** - Compress/resize uploaded images, generate thumbnails ✅ COMPLETE (Nov 2025)
+        - [x] **GraphQL query complexity limits** - Prevent abuse of nested queries ✅ COMPLETE (Nov 2025) - Apollo plugin with depth/complexity validation
+        - [x] **Background job queue** - Bull/BullMQ for scraping, blockchain transactions, email sending ✅ COMPLETE (Nov 2025) - In-memory fallback, email/blockchain handlers
 
 ---
 

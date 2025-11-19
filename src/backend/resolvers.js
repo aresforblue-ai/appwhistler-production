@@ -24,6 +24,7 @@ const {
   sanitizeJson
 } = require('./utils/sanitizer');
 const { requireSecret, getNumber } = require('../config/secrets');
+const cacheManager = require('./utils/cacheManager');
 
 const JWT_SECRET = requireSecret('JWT_SECRET');
 const PASSWORD_RESET_TOKEN_TTL_MIN = getNumber('PASSWORD_RESET_TOKEN_TTL_MIN', 30);
@@ -120,8 +121,19 @@ const resolvers = {
       return result.rows[0];
     },
 
-    // Get all apps with filters
+    // Get all apps with filters (cached for non-search queries)
     apps: async (_, { category, platform, search, minTruthRating, limit = 20, offset = 0 }, context) => {
+      // Don't cache search queries (they're typically user-initiated)
+      // Only cache filtered/sorted queries
+      if (!search && offset === 0) {
+        const cacheKey = cacheManager.constructor.generateKey('apps:filtered', {
+          category, platform, minTruthRating, limit
+        });
+        
+        const cached = await cacheManager.get(cacheKey);
+        if (cached) return cached;
+      }
+
       let query = 'SELECT * FROM apps WHERE 1=1';
       const params = [];
       let paramCount = 1;
@@ -161,7 +173,7 @@ const resolvers = {
 
       const result = await context.pool.query(query, params);
 
-      return {
+      const response = {
         edges: result.rows,
         pageInfo: {
           hasNextPage: result.rows.length === limit,
@@ -170,6 +182,16 @@ const resolvers = {
           endCursor: (offset + result.rows.length).toString()
         }
       };
+
+      // Cache non-search queries
+      if (!search && offset === 0) {
+        const cacheKey = cacheManager.constructor.generateKey('apps:filtered', {
+          category, platform, minTruthRating, limit
+        });
+        await cacheManager.set(cacheKey, response, 600); // Cache for 10 minutes
+      }
+
+      return response;
     },
 
     // Get single app by ID
@@ -181,16 +203,20 @@ const resolvers = {
       return result.rows[0];
     },
 
-    // Get trending apps
+    // Get trending apps (cached)
     trendingApps: async (_, { limit = 10 }, context) => {
-      const result = await context.pool.query(
-        `SELECT * FROM apps 
-         WHERE is_verified = true 
-         ORDER BY download_count DESC 
-         LIMIT $1`,
-        [limit]
-      );
-      return result.rows;
+      const cacheKey = cacheManager.constructor.generateKey('trending:apps', { limit });
+      
+      return cacheManager.getOrSet(cacheKey, async () => {
+        const result = await context.pool.query(
+          `SELECT * FROM apps 
+           WHERE is_verified = true 
+           ORDER BY download_count DESC 
+           LIMIT $1`,
+          [limit]
+        );
+        return result.rows;
+      }, 300); // Cache for 5 minutes
     },
 
     // Get AI recommendations for user
@@ -1193,6 +1219,9 @@ const resolvers = {
         [userId, 'verify_app', JSON.stringify({ app_id: id })]
       );
 
+      // Invalidate cache since trending apps may have changed
+      await cacheManager.delete(cacheManager.constructor.generateKey('trending:apps', { limit: 10 }));
+
       console.log(`✅ App ${id} verified by user ${userId}`);
       return result.rows[0];
     },
@@ -1285,6 +1314,70 @@ const resolvers = {
 
       console.log(`❌ Fact-check ${id} rejected by user ${userId}: ${reason || 'No reason provided'}`);
       return true;
+    },
+
+    // Update user profile
+    updateUserProfile: async (_, { userId, bio, avatar, socialLinks }, context) => {
+      const { userId: authUserId } = requireAuth(context);
+
+      // Users can only update their own profile unless admin
+      if (authUserId !== userId && context.user?.role !== 'admin') {
+        throw createGraphQLError('Unauthorized to update this profile', 'FORBIDDEN');
+      }
+
+      try {
+        const result = await context.pool.query(
+          `UPDATE users
+           SET bio = COALESCE($1, bio),
+               avatar = COALESCE($2, avatar),
+               social_links = COALESCE($3, social_links),
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $4
+           RETURNING *`,
+          [bio || null, avatar || null, JSON.stringify(socialLinks) || null, userId]
+        );
+
+        if (result.rows.length === 0) {
+          throw createGraphQLError('User not found', 'NOT_FOUND');
+        }
+
+        console.log(`✅ Profile updated for user ${userId}`);
+        return result.rows[0];
+      } catch (error) {
+        console.error('Update profile error:', error);
+        throw createGraphQLError('Failed to update profile', 'INTERNAL_ERROR');
+      }
+    },
+
+    // Update user preferences
+    updateUserPreferences: async (_, { userId, preferences }, context) => {
+      const { userId: authUserId } = requireAuth(context);
+
+      // Users can only update their own preferences
+      if (authUserId !== userId && context.user?.role !== 'admin') {
+        throw createGraphQLError('Unauthorized to update preferences', 'FORBIDDEN');
+      }
+
+      try {
+        const result = await context.pool.query(
+          `UPDATE users
+           SET preferences = $1,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2
+           RETURNING *`,
+          [JSON.stringify(preferences), userId]
+        );
+
+        if (result.rows.length === 0) {
+          throw createGraphQLError('User not found', 'NOT_FOUND');
+        }
+
+        console.log(`✅ Preferences updated for user ${userId}`);
+        return result.rows[0];
+      } catch (error) {
+        console.error('Update preferences error:', error);
+        throw createGraphQLError('Failed to update preferences', 'INTERNAL_ERROR');
+      }
     },
   },
 
