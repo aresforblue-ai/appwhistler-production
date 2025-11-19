@@ -20,8 +20,8 @@
 ### 2. Core Functionality Gaps
 1
 - [x] **Frontend implementation** - Vite + Tailwind React client wired to GraphQL apps/fact-checks (Nov 2025)
-- [ ] **GraphQL subscriptions** - Implement real-time updates beyond Socket.io broadcast
-- [ ] **File uploads** - Add avatar, app icon upload with S3/CloudFlare R2
+- [x ] **GraphQL subscriptions** - Implement real-time updates beyond Socket.io broadcast
+- [x] **File uploads** - IPFS/Pinata avatar, app icon, fact-check image uploads ✅ COMPLETE (Nov 2025)
 - [x] **Email service** - Integrate SendGrid/Postmark for transactional emails (verification, notifications) ✅ COMPLETE (Nov 2025)
 - [ ] **Search functionality** - Full-text search across apps/fact-checks (PostgreSQL `tsvector` or ElasticSearch)
 - [ ] **Pagination cursor implementation** - Current pagination uses offset, switch to cursor-based

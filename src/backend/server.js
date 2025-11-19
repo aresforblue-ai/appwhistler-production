@@ -106,6 +106,10 @@ app.use('/graphql', perUserRateLimiter);
 // GDPR/CCPA compliance endpoints
 app.use('/api/v1/privacy', createPrivacyRouter(pool));
 
+// File upload endpoints
+const uploadRouter = require('./routes/upload');
+app.use('/api/v1/upload', uploadRouter);
+
 // Health check endpoint (useful for monitoring)
 app.get('/health', async (req, res) => {
   try {

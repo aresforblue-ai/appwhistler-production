@@ -619,6 +619,94 @@ const resolvers = {
 
       return result.rows[0];
     },
+
+    // Update user avatar (called after uploading to IPFS)
+    updateAvatar: async (_, { avatarUrl, thumbnailUrl, ipfsHash }, context) => {
+      const { userId } = requireAuth(context);
+
+      // Validate URLs
+      if (!avatarUrl || typeof avatarUrl !== 'string') {
+        throw createGraphQLError('Avatar URL is required', 'BAD_USER_INPUT');
+      }
+
+      if (!ipfsHash || typeof ipfsHash !== 'string') {
+        throw createGraphQLError('IPFS hash is required', 'BAD_USER_INPUT');
+      }
+
+      // Update user avatar in database
+      const result = await context.pool.query(
+        `UPDATE users
+         SET avatar_url = $1,
+             avatar_thumbnail_url = $2,
+             avatar_ipfs_hash = $3,
+             avatar_uploaded_at = CURRENT_TIMESTAMP,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4
+         RETURNING *`,
+        [avatarUrl, thumbnailUrl || null, ipfsHash, userId]
+      );
+
+      if (result.rows.length === 0) {
+        throw createGraphQLError('User not found', 'NOT_FOUND');
+      }
+
+      const user = result.rows[0];
+      console.log(`✅ Avatar updated for user ${userId}`);
+
+      return user;
+    },
+
+    // Update user profile (existing mutation - implementation added)
+    updateProfile: async (_, { username, walletAddress }, context) => {
+      const { userId } = requireAuth(context);
+
+      // Build dynamic update query
+      const updates = [];
+      const params = [];
+      let paramCount = 1;
+
+      if (username) {
+        const usernameValidation = validateUsername(username);
+        if (!usernameValidation.valid) {
+          throw createGraphQLError(usernameValidation.message, 'BAD_USER_INPUT');
+        }
+        updates.push(`username = $${paramCount}`);
+        params.push(sanitizePlainText(username));
+        paramCount++;
+      }
+
+      if (walletAddress) {
+        const addressValidation = require('./utils/validation').validateEthAddress(walletAddress);
+        if (!addressValidation.valid) {
+          throw createGraphQLError(addressValidation.message, 'BAD_USER_INPUT');
+        }
+        updates.push(`wallet_address = $${paramCount}`);
+        params.push(sanitizePlainText(walletAddress));
+        paramCount++;
+      }
+
+      if (updates.length === 0) {
+        throw createGraphQLError('No updates provided', 'BAD_USER_INPUT');
+      }
+
+      updates.push(`updated_at = CURRENT_TIMESTAMP`);
+      params.push(userId);
+
+      const query = `
+        UPDATE users
+        SET ${updates.join(', ')}
+        WHERE id = $${paramCount}
+        RETURNING *
+      `;
+
+      const result = await context.pool.query(query, params);
+
+      if (result.rows.length === 0) {
+        throw createGraphQLError('User not found', 'NOT_FOUND');
+      }
+
+      return result.rows[0];
+    },
   },
 
   // Nested resolvers (for related data)

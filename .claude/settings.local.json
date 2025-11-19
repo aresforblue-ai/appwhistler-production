@@ -5,7 +5,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(taskkill:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(psql:*)",
+      "Bash(node scripts/run-migration.js:*)"
     ],
     "deny": [],
     "ask": []

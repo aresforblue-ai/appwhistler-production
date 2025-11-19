@@ -17,6 +17,9 @@ const typeDefs = gql`
     truthScore: Int!
     isVerified: Boolean!
     role: String!
+    avatarUrl: String
+    avatarThumbnailUrl: String
+    avatarUploadedAt: DateTime
     createdAt: DateTime!
     reviews: [Review!]
     factChecks: [FactCheck!]
@@ -122,6 +125,15 @@ const typeDefs = gql`
     hasPreviousPage: Boolean!
     startCursor: String
     endCursor: String
+  }
+
+  # File upload response type
+  type UploadResponse {
+    success: Boolean!
+    url: String!
+    thumbnailUrl: String
+    ipfsHash: String!
+    message: String
   }
 
   # Input types for mutations
@@ -233,6 +245,7 @@ const typeDefs = gql`
 
     # User actions
     updateProfile(username: String, walletAddress: String): User!
+    updateAvatar(avatarUrl: String!, thumbnailUrl: String, ipfsHash: String!): User!
   }
 
   # Subscriptions (real-time updates via WebSocket)
