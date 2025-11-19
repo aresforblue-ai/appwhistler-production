@@ -26,6 +26,7 @@ const { validateEnvironment, printValidationResults, getFeatureFlags } = require
 const { createBatchLoaders } = require('./utils/dataLoader');
 const { authenticateToken } = require('./middleware/auth');
 const { perUserRateLimiter } = require('./middleware/rateLimiter');
+const createPrivacyRouter = require('./routes/privacy');
 
 // Validate environment before starting
 const validation = validateEnvironment();
@@ -56,16 +57,29 @@ pool.query('SELECT NOW()', (err, res) => {
 });
 
 // Middleware: Security headers (protects against common attacks)
-app.use(helmet({
-  contentSecurityPolicy: NODE_ENV === 'production',
-  crossOriginEmbedderPolicy: false,
-}));
-
-// Middleware: CORS (allows frontend to access API)
 const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [
   'http://localhost:3000',
   'http://localhost:5000'
 ]);
+
+const cspDirectives = NODE_ENV === 'production' ? {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],
+  imgSrc: ["'self'", 'data:', 'https:'],
+  connectSrc: ["'self'", 'ws:', 'wss:', ...allowedOrigins],
+  fontSrc: ["'self'", 'https:', 'data:'],
+  frameAncestors: ["'none'"]
+} : false;
+
+app.use(helmet({
+  contentSecurityPolicy: cspDirectives ? { directives: cspDirectives } : false,
+  crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: 'no-referrer' },
+  frameguard: { action: 'deny' },
+  hsts: NODE_ENV === 'production' ? { maxAge: 31536000, includeSubDomains: true, preload: true } : false,
+  permittedCrossDomainPolicies: { value: 'none' }
+}));
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -88,6 +102,9 @@ app.use(authenticateToken);
 // Middleware: Rate limiting (tiered per user/IP)
 app.use('/api/', perUserRateLimiter);
 app.use('/graphql', perUserRateLimiter);
+
+// GDPR/CCPA compliance endpoints
+app.use('/api/v1/privacy', createPrivacyRouter(pool));
 
 // Health check endpoint (useful for monitoring)
 app.get('/health', async (req, res) => {

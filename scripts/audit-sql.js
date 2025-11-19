@@ -50,7 +50,7 @@ files.forEach((file) => {
   try {
     ast = parser.parse(code, {
       sourceType: 'unambiguous',
-      plugins: ['jsx', 'classProperties', 'dynamicImport'],
+      plugins: ['jsx', 'classProperties', 'dynamicImport', 'objectRestSpread'],
       errorRecovery: true,
       allowReturnOutsideFunction: true
     });

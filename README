@@ -10,3 +10,10 @@ Expanding to NewsTruth, FinanceTruth, HealthTruth, and beyond.
 50% of any future proceeds auto-donated via smart contracts to truth DAOs.
 
 Made with ❤️ in Beaumont, Texas by Tyler Hughes (@AppWhistler) — November 2025
+
+## Privacy & Compliance Highlights
+
+- `POST /api/v1/privacy/export` — authenticated users can download a JSON export of their account, reviews, fact-checks, bounties, and recent activity logs.
+- `POST /api/v1/privacy/delete` — anonymizes the requesting account, clears linked content, and logs the request for auditing.
+- `GET /api/v1/privacy/policy` — serves the latest markdown privacy policy located at `docs/privacy-policy.md`.
+- `npm run audit:sql` — static analysis script that blocks unsafe SQL string interpolation.
