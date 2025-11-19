@@ -10,7 +10,8 @@
     "build": "cd src/frontend && npm run build",
     "test": "jest --coverage",
     "scrape": "node src/scraper/ethicalScraper.js",
-    "deploy:contract": "hardhat run scripts/deploy.js --network goerli"
+    "deploy:contract": "hardhat run scripts/deploy.js --network goerli",
+    "audit:sql": "node scripts/audit-sql.js"
   },
   "keywords": [
     "truth-tech",
@@ -46,8 +47,11 @@
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@babel/parser": "^7.26.3",
+    "@babel/traverse": "^7.26.3",
     "concurrently": "^8.2.2",
     "eslint": "^8.56.0",
+    "glob": "^10.4.5",
     "hardhat": "^2.19.4",
     "jest": "^29.7.0",
     "nodemon": "^3.0.2",

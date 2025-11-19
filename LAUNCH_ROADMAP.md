@@ -4,15 +4,12 @@
 **Target Launch:** Q1 2026  
 **Mission:** Privacy-first app intelligence combating disinformation
 
----
-
 ## 🚨 Critical (Must-Have for Launch)
-
 ### 1. Security & Compliance
 - [x] **Production environment secrets management** - Replace `.env` with Vault/AWS Secrets Manager
 - [x] **Rate limiting per user** - Authenticated users get higher limits than anonymous
 - [x] **Input sanitization** - Add XSS protection for all user-submitted content (reviews, fact-checks)
-- [ ] **SQL injection audit** - Verify all queries use parameterization (currently done, needs formal audit)
+- [x] **SQL injection audit** - Verify all queries use parameterization (currently done, needs formal audit)
 - [ ] **GDPR/CCPA compliance** - Add data export, deletion, privacy policy endpoints
 - [ ] **Security headers audit** - Review helmet.js config for production CSP
 - [ ] **Password reset flow** - Implement email-based password recovery
