@@ -11,6 +11,11 @@ const {
 const { 
   createGraphQLError, handleValidationErrors, safeDatabaseOperation 
 } = require('./utils/errorHandler');
+const {
+  sanitizePlainText,
+  sanitizeRichText,
+  sanitizeJson
+} = require('./utils/sanitizer');
 const { requireSecret } = require('../config/secrets');
 
 const JWT_SECRET = requireSecret('JWT_SECRET');
@@ -223,7 +228,14 @@ const resolvers = {
   Mutation: {
     // Register new user
     register: async (_, { input }, context) => {
-      const { username, email, password, walletAddress } = input;
+      const rawUsername = sanitizePlainText(input.username);
+      const rawEmail = sanitizePlainText(input.email);
+      const rawWalletAddress = input.walletAddress ? sanitizePlainText(input.walletAddress) : null;
+      const { password } = input;
+
+      const username = rawUsername;
+      const email = rawEmail;
+      const walletAddress = rawWalletAddress;
 
       // Validate inputs
       const emailValidation = validateEmail(email);
@@ -278,7 +290,8 @@ const resolvers = {
 
     // Login user
     login: async (_, { input }, context) => {
-      const { email, password } = input;
+      const email = sanitizePlainText(input.email);
+      const { password } = input;
 
       // Validate inputs
       const emailValidation = validateEmail(email);
@@ -325,7 +338,13 @@ const resolvers = {
     // Submit fact check
     submitFactCheck: async (_, { input }, context) => {
       const { userId } = requireAuth(context);
-      const { claim, verdict, confidenceScore, sources, explanation, category, imageUrl } = input;
+      const claim = sanitizePlainText(input.claim);
+      const verdict = input.verdict;
+      const confidenceScore = input.confidenceScore;
+      const sources = input.sources ? sanitizeJson(input.sources) : null;
+      const explanation = input.explanation ? sanitizeRichText(input.explanation) : null;
+      const category = sanitizePlainText(input.category);
+      const imageUrl = input.imageUrl ? sanitizePlainText(input.imageUrl) : null;
 
       // Validate inputs
       const claimValidation = validateTextLength(claim, 10, 5000, 'Claim');
@@ -364,7 +383,16 @@ const resolvers = {
          (claim, verdict, confidence_score, sources, explanation, category, image_url, submitted_by)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
-        [claim, verdict, confidenceScore || 0, JSON.stringify(sources), explanation, category, imageUrl, userId]
+        [
+          claim,
+          verdict,
+          confidenceScore || 0,
+          sources ? JSON.stringify(sources) : null,
+          explanation,
+          category,
+          imageUrl,
+          userId
+        ]
       );
 
       const factCheck = result.rows[0];
@@ -386,7 +414,8 @@ const resolvers = {
     // Submit review
     submitReview: async (_, { input }, context) => {
       const { userId } = requireAuth(context);
-      const { appId, rating, reviewText } = input;
+      const { appId, rating } = input;
+      const reviewText = input.reviewText ? sanitizeRichText(input.reviewText) : null;
 
       // Validate inputs
       const ratingValidation = validateRating(rating, 0, 5);
@@ -427,11 +456,13 @@ const resolvers = {
     createBounty: async (_, { claim, rewardAmount }, context) => {
       const { userId } = requireAuth(context);
 
+      const sanitizedClaim = sanitizePlainText(claim);
+
       const result = await context.pool.query(
         `INSERT INTO bounties (claim, reward_amount, creator_id)
          VALUES ($1, $2, $3)
          RETURNING *`,
-        [claim, rewardAmount, userId]
+        [sanitizedClaim, rewardAmount, userId]
       );
 
       return result.rows[0];

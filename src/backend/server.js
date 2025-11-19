@@ -8,7 +8,6 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
 const { Pool } = require('pg');
 require('dotenv').config();
 
@@ -25,6 +24,8 @@ loadSecrets();
 // Import utilities
 const { validateEnvironment, printValidationResults, getFeatureFlags } = require('./utils/envValidator');
 const { createBatchLoaders } = require('./utils/dataLoader');
+const { authenticateToken } = require('./middleware/auth');
+const { perUserRateLimiter } = require('./middleware/rateLimiter');
 
 // Validate environment before starting
 const validation = validateEnvironment();
@@ -77,19 +78,16 @@ app.use(cors({
   credentials: true, // Allow cookies for auth
 }));
 
-// Middleware: Rate limiting (prevents abuse)
-const limiter = rateLimit({
-  windowMs: getNumber('RATE_LIMIT_WINDOW', 15) * 60 * 1000, // 15 minutes
-  max: getNumber('RATE_LIMIT_MAX_REQUESTS', 100), // 100 requests per window
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', limiter);
-
 // Middleware: Parse JSON bodies
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Middleware: Authentication (populates req.user when token present)
+app.use(authenticateToken);
+
+// Middleware: Rate limiting (tiered per user/IP)
+app.use('/api/', perUserRateLimiter);
+app.use('/graphql', perUserRateLimiter);
 
 // Health check endpoint (useful for monitoring)
 app.get('/health', async (req, res) => {

@@ -2,6 +2,11 @@
 // Standardized error handling and logging
 
 const { GraphQLError } = require('graphql');
+const { loadSecrets, getSecret } = require('../../config/secrets');
+
+loadSecrets();
+
+const isDevelopment = () => getSecret('NODE_ENV', 'development') === 'development';
 
 // Error codes and their associated HTTP status codes
 const ERROR_CODES = {
@@ -144,7 +149,7 @@ function formatErrorResponse(error, code = 'INTERNAL_SERVER_ERROR') {
       message: error?.message || errorInfo.message,
       code,
       statusCode: errorInfo.statusCode,
-      ...(process.env.NODE_ENV === 'development' && { stack: error?.stack })
+      ...(isDevelopment() && { stack: error?.stack })
     }
   };
 }
@@ -164,7 +169,7 @@ function logEvent(level = 'info', message, context = {}) {
     ...context
   };
   
-  if (process.env.NODE_ENV === 'development') {
+  if (isDevelopment()) {
     console.log(JSON.stringify(logEntry, null, 2));
   } else {
     console.log(JSON.stringify(logEntry));

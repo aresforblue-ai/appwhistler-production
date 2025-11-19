@@ -1,6 +1,20 @@
 // src/backend/utils/envValidator.js
 // Validate environment configuration on startup
 
+const { loadSecrets, getSecret } = require('../../config/secrets');
+
+loadSecrets();
+
+function hasValue(varName) {
+  const value = getSecret(varName);
+  return value !== undefined && value !== null && value !== '';
+}
+
+function getValue(varName, fallback = undefined) {
+  const value = getSecret(varName, fallback);
+  return value === undefined ? fallback : value;
+}
+
 /**
  * Critical environment variables required for app to run
  */
@@ -51,14 +65,14 @@ function validateEnvironment() {
   
   // Check required variables
   for (const [varName, description] of Object.entries(REQUIRED_ENV_VARS)) {
-    if (!process.env[varName]) {
+    if (!hasValue(varName)) {
       errors.push(`❌ Missing required: ${varName} - ${description}`);
     }
   }
   
   // Check recommended variables
   for (const [varName, description] of Object.entries(RECOMMENDED_ENV_VARS)) {
-    if (!process.env[varName]) {
+    if (!hasValue(varName)) {
       warnings.push(`⚠️  Missing recommended: ${varName} - ${description}`);
     }
   }
@@ -66,13 +80,13 @@ function validateEnvironment() {
   // Check conditional variables
   for (const [featureName, config] of Object.entries(CONDITIONAL_ENV_VARS)) {
     if (config.atLeastOne) {
-      const hasAny = config.vars.some(varName => process.env[varName]);
+      const hasAny = config.vars.some(varName => hasValue(varName));
       if (!hasAny) {
         warnings.push(`⚠️  ${config.description}`);
       }
     } else {
       for (const varName of config.vars) {
-        if (!process.env[varName]) {
+        if (!hasValue(varName)) {
           warnings.push(`⚠️  ${featureName} disabled: ${varName} not set - ${config.description}`);
         }
       }
@@ -80,18 +94,21 @@ function validateEnvironment() {
   }
   
   // Validate port number if set
-  if (process.env.PORT && isNaN(parseInt(process.env.PORT))) {
+  const portValue = getValue('PORT');
+  if (portValue && Number.isNaN(parseInt(portValue, 10))) {
     errors.push('❌ PORT must be a valid number');
   }
   
   // Validate NODE_ENV
-  if (process.env.NODE_ENV && !['development', 'staging', 'production'].includes(process.env.NODE_ENV)) {
+  const nodeEnv = getValue('NODE_ENV');
+  if (nodeEnv && !['development', 'staging', 'production'].includes(nodeEnv)) {
     errors.push('❌ NODE_ENV must be one of: development, staging, production');
   }
   
   // Validate JWT_SECRET strength in production
-  if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET) {
-    if (process.env.JWT_SECRET.length < 32) {
+  if (nodeEnv === 'production') {
+    const jwtSecret = getValue('JWT_SECRET');
+    if (jwtSecret && jwtSecret.length < 32) {
       errors.push('❌ JWT_SECRET should be at least 32 characters in production');
     }
   }
@@ -132,10 +149,10 @@ function printValidationResults(validation) {
  */
 function getFeatureFlags() {
   return {
-    blockchain_enabled: Boolean(process.env.INFURA_PROJECT_ID || process.env.ALCHEMY_API_KEY),
-    ai_fact_checking_enabled: Boolean(process.env.HUGGINGFACE_API_KEY),
-    production_mode: process.env.NODE_ENV === 'production',
-    debug_mode: process.env.NODE_ENV === 'development'
+    blockchain_enabled: Boolean(getValue('INFURA_PROJECT_ID') || getValue('ALCHEMY_API_KEY')),
+    ai_fact_checking_enabled: Boolean(getValue('HUGGINGFACE_API_KEY')),
+    production_mode: getValue('NODE_ENV') === 'production',
+    debug_mode: getValue('NODE_ENV') === 'development'
   };
 }
 
