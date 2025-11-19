@@ -36,6 +36,7 @@ const RECOMMENDED_ENV_VARS = {
   INFURA_PROJECT_ID: 'For blockchain integration (or use ALCHEMY_API_KEY)',
   PORT: 'Server port (defaults to 5000)',
   ALLOWED_ORIGINS: 'CORS origins (comma-separated)',
+  SENTRY_DSN: 'Optional DSN for Sentry error monitoring'
 };
 
 /**
@@ -52,6 +53,11 @@ const CONDITIONAL_ENV_VARS = {
   AI_FEATURES_ENABLED: {
     vars: ['HUGGINGFACE_API_KEY'],
     description: 'HUGGINGFACE_API_KEY is needed for AI fact-checking'
+  },
+  // Error monitoring
+  ERROR_MONITORING_ENABLED: {
+    vars: ['SENTRY_DSN'],
+    description: 'Provide SENTRY_DSN to enable error monitoring via Sentry'
   }
 };
 
@@ -151,6 +157,7 @@ function getFeatureFlags() {
   return {
     blockchain_enabled: Boolean(getValue('INFURA_PROJECT_ID') || getValue('ALCHEMY_API_KEY')),
     ai_fact_checking_enabled: Boolean(getValue('HUGGINGFACE_API_KEY')),
+    error_monitoring_enabled: Boolean(getValue('SENTRY_DSN')),
     production_mode: getValue('NODE_ENV') === 'production',
     debug_mode: getValue('NODE_ENV') === 'development'
   };

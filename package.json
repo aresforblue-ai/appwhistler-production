@@ -9,9 +9,19 @@
     "client": "cd src/frontend && npm start",
     "build": "cd src/frontend && npm run build",
     "test": "jest --coverage",
+    "test:unit": "jest --coverage --testPathPattern=tests/unit",
+    "test:integration": "jest --runInBand --testPathPattern=tests/integration",
+    "test:e2e": "playwright test",
+    "test:load": "artillery run tests/load/trending.yml",
+    "test:all": "npm run test:unit && npm run test:integration && npm run test:e2e",
     "scrape": "node src/scraper/ethicalScraper.js",
     "deploy:contract": "hardhat run scripts/deploy.js --network goerli",
-    "audit:sql": "node scripts/audit-sql.js"
+    "audit:sql": "node scripts/audit-sql.js",
+    "migrate": "node-pg-migrate up -c database/migration.config.cjs",
+    "migrate:down": "node-pg-migrate down -c database/migration.config.cjs",
+    "migration:new": "node scripts/run-migration.js create",
+    "docs:graphql": "node scripts/generate-graphql-schema.js",
+    "docs:rest": "node scripts/generate-rest-spec.js"
   },
   "keywords": [
     "truth-tech",
@@ -28,6 +38,8 @@
   },
   "dependencies": {
     "@huggingface/inference": "^2.6.4",
+    "@sentry/node": "^7.108.0",
+    "@sentry/react": "^7.108.0",
     "@pinata/sdk": "^2.1.0",
     "@sendgrid/mail": "^8.1.6",
     "apollo-server-express": "^3.13.0",
@@ -53,14 +65,19 @@
   "devDependencies": {
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.3",
+    "@playwright/test": "^1.50.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "artillery": "^2.0.0-31",
     "concurrently": "^8.2.2",
     "eslint": "^8.56.0",
     "glob": "^10.4.5",
     "hardhat": "^2.19.4",
     "jest": "^29.7.0",
+    "node-pg-migrate": "^6.2.2",
     "nodemon": "^3.0.2",
+    "pg-mem": "^3.0.5",
     "prettier": "^3.1.1",
+    "js-yaml": "^4.1.0",
     "supertest": "^6.3.3"
   },
   "engines": {

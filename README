@@ -17,6 +17,14 @@ Made with ❤️ in Beaumont, Texas by Tyler Hughes (@AppWhistler) — November 
 - Run `npm run dev` for the full stack or `npm run client` to focus on the Vite app (see `src/frontend/README.md` for the full playbook).
 - API calls point to `http://localhost:5000` by default and respect `VITE_API_URL` overrides so the UI stays in sync with the backend env.
 
+## Testing & Quality
+
+- Unit tests live under `tests/unit` and run with `npm run test:unit` (80% global coverage gate).
+- Integration tests exercise GraphQL resolvers against an in-memory Postgres via `npm run test:integration`.
+- Playwright powers browser checks (`npm run test:e2e`), intercepting backend requests for deterministic runs.
+- Lightweight load scenarios reside in `tests/load` (run locally with `npm run test:load`).
+- Generate fresh API docs any time the schema or routes change: `npm run docs:graphql` and `npm run docs:rest`.
+
 ## Privacy & Compliance Highlights
 
 - `POST /api/v1/privacy/export` — authenticated users can download a JSON export of their account, reviews, fact-checks, bounties, and recent activity logs.

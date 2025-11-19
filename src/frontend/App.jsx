@@ -3,12 +3,33 @@
 // Minimalist design with greys, blues, and whites + dark mode
 
 import React, { useState, useEffect } from 'react';
+import * as Sentry from '@sentry/react';
 import './App.css'; // Tailwind CSS imported here
 
 const API_BASE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
   process.env.REACT_APP_API_URL ||
   'http://localhost:5000';
+
+const SENTRY_DSN =
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SENTRY_DSN) ||
+  process.env.REACT_APP_SENTRY_DSN ||
+  '';
+
+const SENTRY_SAMPLE_RATE = Number(
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SENTRY_TRACES_SAMPLE_RATE) ||
+  process.env.REACT_APP_SENTRY_TRACES_SAMPLE_RATE ||
+  '0.1'
+);
+
+if (typeof window !== 'undefined' && SENTRY_DSN && !window.__APPWHISTLER_SENTRY__) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: Number.isFinite(SENTRY_SAMPLE_RATE) ? SENTRY_SAMPLE_RATE : 0.1
+  });
+  window.__APPWHISTLER_SENTRY__ = true;
+}
 
 const HERO_FEATURES = [
   'Realtime disinformation radar',
@@ -433,10 +454,13 @@ function DiscoverTab({
       <section className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-          <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Trending integrity signals</p>
-          <h3 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            {hasResults ? 'Precision-ranked apps' : 'Ready when you are'}
-          </h3>
+            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              Trending integrity signals
+            </p>
+            <h3 className={`text-2xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+              {hasResults ? 'Precision-ranked apps' : 'Ready when you are'}
+            </h3>
+          </div>
         </div>
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {hasResults ? (

@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const { Pool } = require('pg');
+const Sentry = require('@sentry/node');
 require('dotenv').config();
 
 const {
@@ -46,6 +47,19 @@ const httpServer = createServer(app);
 const pool = new Pool(getDatabaseConfig());
 
 const NODE_ENV = getSecret('NODE_ENV', 'development');
+const SENTRY_DSN = getSecret('SENTRY_DSN');
+const SENTRY_TRACES_SAMPLE_RATE = parseFloat(getSecret('SENTRY_TRACES_SAMPLE_RATE', '0.1'));
+
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    environment: NODE_ENV,
+    tracesSampleRate: Number.isFinite(SENTRY_TRACES_SAMPLE_RATE) ? SENTRY_TRACES_SAMPLE_RATE : 0.1
+  });
+
+  app.use(Sentry.Handlers.requestHandler());
+  app.use(Sentry.Handlers.tracingHandler());
+}
 
 // Test database connection
 pool.query('SELECT NOW()', (err, res) => {
@@ -213,6 +227,10 @@ function broadcastFactCheck(category, data) {
 // Make broadcast available globally
 global.broadcastFactCheck = broadcastFactCheck;
 
+if (SENTRY_DSN) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found' });
@@ -221,6 +239,9 @@ app.use((req, res) => {
 // Global error handler
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
+  if (SENTRY_DSN) {
+    Sentry.captureException(err);
+  }
   res.status(500).json({ 
     error: 'Internal server error',
     message: NODE_ENV === 'development' ? err.message : undefined

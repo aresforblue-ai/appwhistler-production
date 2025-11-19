@@ -1,43 +1,80 @@
 // scripts/run-migration.js
-// Run database migrations
+// Helper script to create timestamped SQL migrations compatible with node-pg-migrate
 
-const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
-require('dotenv').config();
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD
-});
+const MIGRATIONS_DIR = path.join(__dirname, '..', 'database', 'migrations');
 
-async function runMigration(filename) {
-  const migrationPath = path.join(__dirname, '..', 'database', 'migrations', filename);
-  const sql = fs.readFileSync(migrationPath, 'utf8');
+function timestamp() {
+  const now = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
 
-  console.log(`Running migration: ${filename}`);
+  return [
+    now.getFullYear(),
+    pad(now.getMonth() + 1),
+    pad(now.getDate()),
+    pad(now.getHours()),
+    pad(now.getMinutes()),
+    pad(now.getSeconds())
+  ].join('');
+}
 
-  try {
-    await pool.query(sql);
-    console.log(`✅ Migration completed: ${filename}`);
-  } catch (error) {
-    console.error(`❌ Migration failed: ${filename}`);
-    console.error(error.message);
-    throw error;
+function ensureMigrationsDir() {
+  if (!fs.existsSync(MIGRATIONS_DIR)) {
+    fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
   }
 }
 
-async function main() {
-  const migrationFile = process.argv[2] || '001_add_avatar_url.sql';
+function createMigrationFile(name = 'new_migration') {
+  ensureMigrationsDir();
 
-  try {
-    await runMigration(migrationFile);
-  } finally {
-    await pool.end();
-  }
+  const safeName = name
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'migration';
+
+  const fileName = `${timestamp()}_${safeName}.sql`;
+  const filePath = path.join(MIGRATIONS_DIR, fileName);
+
+  const template = `-- ${fileName}
+-- Up migration
+
+BEGIN;
+
+-- TODO: add migration SQL here
+
+COMMIT;
+
+-- Down migration (rollback)
+-- BEGIN;
+--   -- add rollback SQL here
+-- COMMIT;
+`;
+
+  fs.writeFileSync(filePath, template, 'utf8');
+  console.log(`🆕 Created migration at database/migrations/${fileName}`);
 }
 
-main().catch(console.error);
+function printUsage() {
+  console.log('Usage: node scripts/run-migration.js create [name]');
+}
+
+function main() {
+  const [command, name] = process.argv.slice(2);
+
+  if (!command || command === 'help') {
+    printUsage();
+    return;
+  }
+
+  if (command !== 'create') {
+    console.error(`Unknown command '${command}'.`);
+    printUsage();
+    process.exit(1);
+  }
+
+  createMigrationFile(name);
+}
+
+main();

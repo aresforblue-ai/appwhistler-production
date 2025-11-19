@@ -32,11 +32,13 @@ Create `src/frontend/.env` (already gitignored) with the variables below. Vite e
 | --- | --- | --- | --- |
 | `VITE_API_URL` (or `REACT_APP_API_URL`) | Yes | `http://localhost:5000` | Base URL for the Express/Apollo backend. Used for REST fallbacks like `/api/v1/apps/trending` and upcoming GraphQL queries. |
 | `VITE_GRAPHQL_URL` *(planned)* | No | `http://localhost:5000/graphql` | Optional override for Apollo client configuration once real GraphQL wiring lands. |
+| `VITE_SENTRY_DSN` *(optional)* | No | — | DSN for Sentry error reporting in the browser UI. Pair with `VITE_SENTRY_TRACES_SAMPLE_RATE` for performance traces. |
 
 Example:
 
-```
+```env
 VITE_API_URL=http://localhost:5000
+VITE_SENTRY_DSN=
 ```
 
 ## Feature map

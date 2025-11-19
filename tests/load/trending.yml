@@ -1,0 +1,14 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 10
+      arrivalRate: 5
+  defaults:
+    headers:
+      Accept: "application/json"
+
+scenarios:
+  - name: trending apps
+    flow:
+      - get:
+          url: "/api/v1/apps/trending"
