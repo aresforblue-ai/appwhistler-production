@@ -13,6 +13,7 @@ class FactChecker {
   constructor() {
     this.hf = new HfInference(getSecret('HUGGINGFACE_API_KEY'));
     this.cache = new Map(); // Cache results to reduce API calls
+    this.cacheTimers = new Map();
     
     // External fact-check APIs (all have free tiers)
     this.externalAPIs = {
@@ -61,7 +62,17 @@ class FactChecker {
 
       // Cache for 1 hour
       this.cache.set(cacheKey, finalResult);
-      setTimeout(() => this.cache.delete(cacheKey), 3600000);
+      const ttlMs = 3600000;
+      const existingTimer = this.cacheTimers.get(cacheKey);
+      if (existingTimer) {
+        clearTimeout(existingTimer);
+      }
+      const expiryTimer = setTimeout(() => {
+        this.cache.delete(cacheKey);
+        this.cacheTimers.delete(cacheKey);
+      }, ttlMs);
+      expiryTimer.unref?.();
+      this.cacheTimers.set(cacheKey, expiryTimer);
 
       return finalResult;
 
@@ -257,18 +268,39 @@ class FactChecker {
    * @private
    */
   normalizeVerdict(textualRating) {
-    const rating = textualRating.toLowerCase();
-    
-    if (rating.includes('true') || rating.includes('correct') || rating.includes('accurate')) {
-      return 'TRUE';
+    const rating = (textualRating || '').toLowerCase().trim();
+
+    if (!rating) {
+      return 'UNVERIFIED';
     }
-    if (rating.includes('false') || rating.includes('incorrect') || rating.includes('pants on fire')) {
-      return 'FALSE';
-    }
-    if (rating.includes('misleading') || rating.includes('half true') || rating.includes('mostly false')) {
+
+    if (
+      rating.includes('misleading') ||
+      rating.includes('half true') ||
+      rating.includes('mostly false') ||
+      rating.includes('partly false')
+    ) {
       return 'MISLEADING';
     }
-    
+
+    if (
+      rating.includes('true') ||
+      rating.includes('correct') ||
+      rating.includes('accurate') ||
+      rating.includes('verified')
+    ) {
+      return 'TRUE';
+    }
+
+    if (
+      rating.includes('false') ||
+      rating.includes('incorrect') ||
+      rating.includes('pants on fire') ||
+      rating.includes('fake')
+    ) {
+      return 'FALSE';
+    }
+
     return 'UNVERIFIED';
   }
 
@@ -334,6 +366,10 @@ class FactChecker {
    * Clear cache (useful for testing or scheduled cleanup)
    */
   clearCache() {
+    for (const timeout of this.cacheTimers.values()) {
+      clearTimeout(timeout);
+    }
+    this.cacheTimers.clear();
     this.cache.clear();
     console.log('✅ Fact-check cache cleared');
   }

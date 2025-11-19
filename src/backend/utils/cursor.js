@@ -33,7 +33,14 @@ function decodeCursor(cursor) {
 
   try {
     const decoded = Buffer.from(cursor, 'base64').toString('utf-8');
-    const [createdAtStr, id] = decoded.split(':');
+    const separatorIndex = decoded.lastIndexOf(':');
+
+    if (separatorIndex === -1) {
+      throw new Error('Invalid cursor format: missing delimiter');
+    }
+
+    const createdAtStr = decoded.slice(0, separatorIndex);
+    const id = decoded.slice(separatorIndex + 1);
 
     if (!id) {
       throw new Error('Invalid cursor format: missing id');
@@ -41,7 +48,7 @@ function decodeCursor(cursor) {
 
     return {
       createdAt: createdAtStr !== 'no-timestamp' ? new Date(createdAtStr) : null,
-      id: id
+      id
     };
   } catch (error) {
     throw new Error(`Invalid cursor format: ${error.message}`);

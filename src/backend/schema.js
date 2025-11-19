@@ -304,7 +304,6 @@ const typeDefs = gql`
     # Fact Checks
     submitFactCheck(input: FactCheckInput!): FactCheck!
     voteFactCheck(id: ID!, vote: Int!): FactCheck!
-    verifyFactCheck(id: ID!): FactCheck!
 
     # Reviews
     submitReview(input: ReviewInput!): Review!

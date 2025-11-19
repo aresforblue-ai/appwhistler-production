@@ -19,21 +19,27 @@ jest.mock('@huggingface/inference', () => {
   return { HfInference };
 });
 
+const mockAxiosGet = jest.fn((url, config = {}) => {
+  if (config.responseType === 'arraybuffer') {
+    return Promise.resolve({ data: Buffer.from('image-bytes') });
+  }
+  return Promise.resolve({ data: { claims: [] } });
+});
+
 jest.mock('axios', () => ({
-  get: jest.fn().mockResolvedValue({ data: { claims: [] } })
+  get: mockAxiosGet
 }));
 
 const factChecker = require('../../../src/ai/factChecker');
 
-const { HfInference } = require('@huggingface/inference');
-
 beforeEach(() => {
+  jest.clearAllMocks();
   factChecker.clearCache();
 });
 
 describe('factChecker', () => {
   test('verifyClaimComprehensive caches results', async () => {
-    const hfClient = HfInference.mock.instances[0];
+    const hfClient = factChecker.hf;
 
     await factChecker.verifyClaimComprehensive('Claim A', 'apps');
     await factChecker.verifyClaimComprehensive('Claim A', 'apps');

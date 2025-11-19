@@ -76,6 +76,10 @@ describe('GraphQL integration', () => {
       .send({ query: '{ trendingApps { name downloadCount truthRating } }' })
       .expect(200);
 
+    if (response.body.errors) {
+      console.log('GraphQL errors:', response.body.errors);
+    }
+
     expect(response.body.data.trendingApps).toHaveLength(1);
     expect(response.body.data.trendingApps[0]).toMatchObject({
       name: 'Secure Chat',
@@ -95,6 +99,10 @@ describe('GraphQL integration', () => {
         }`
       })
       .expect(200);
+
+    if (response.body.errors) {
+      console.log('GraphQL errors:', response.body.errors);
+    }
 
     expect(response.body.data.apps.edges).toHaveLength(1);
     expect(response.body.data.apps.edges[0].name).toBe('Secure Chat');
