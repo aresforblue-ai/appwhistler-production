@@ -12,6 +12,16 @@ const rateLimit = require('express-rate-limit');
 const { Pool } = require('pg');
 require('dotenv').config();
 
+// Import utilities
+const { validateEnvironment, printValidationResults, getFeatureFlags } = require('./utils/envValidator');
+const { createBatchLoaders } = require('./utils/dataLoader');
+
+// Validate environment before starting
+const validation = validateEnvironment();
+if (!printValidationResults(validation)) {
+  process.exit(1);
+}
+
 // Import GraphQL schema and resolvers
 const typeDefs = require('./schema');
 const resolvers = require('./resolvers');
@@ -117,10 +127,14 @@ const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
   context: ({ req }) => {
+    // Initialize batch loaders for this request to prevent N+1 queries
+    const loaders = createBatchLoaders(pool);
+    
     // Make database pool and request available in all resolvers
     return { 
       pool, 
       req,
+      loaders,
       user: req.user // Will be set by auth middleware
     };
   },
@@ -129,7 +143,8 @@ const apolloServer = new ApolloServer({
     console.error('GraphQL Error:', error);
     return {
       message: error.message,
-      code: error.extensions?.code || 'INTERNAL_SERVER_ERROR'
+      code: error.extensions?.code || 'INTERNAL_SERVER_ERROR',
+      statusCode: error.extensions?.statusCode || 500
     };
   },
   introspection: process.env.NODE_ENV !== 'production', // Disable in prod
