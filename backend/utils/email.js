@@ -2,7 +2,7 @@
 // Production-ready email service using SendGrid with HTML templates
 
 const sgMail = require('@sendgrid/mail');
-const { getSecret } = require('../../config/secrets');
+const { getSecret } = require('../../config/secrets.cjs');
 
 // Configuration
 const SENDGRID_API_KEY = getSecret('SENDGRID_API_KEY');

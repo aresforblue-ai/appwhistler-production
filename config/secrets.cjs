@@ -2,7 +2,11 @@
 // Enterprise Secrets Management - AWS-Ready Architecture
 // Currently uses .env, easily upgrades to AWS Secrets Manager
 
-require('dotenv').config();
+const path = require('path');
+const dotenv = require('dotenv');
+
+// Load .env from project root (one level up from config/)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // Secret cache (prevents repeated AWS API calls in production)
 const secretCache = new Map();
@@ -75,14 +79,26 @@ function loadSecrets() {
  */
 function getSecret(key, defaultValue = null) {
   const cached = secretCache.get('secrets');
-  
+
   if (!cached || Date.now() - cached.timestamp > CACHE_TTL) {
     // Cache expired, return default (async refresh happens in background)
     loadSecrets();
     return process.env[key] || defaultValue;
   }
-  
+
   return cached.data[key] !== undefined ? cached.data[key] : defaultValue;
+}
+
+/**
+ * Require a secret (throws if missing)
+ * @param {string} key - Secret key
+ */
+function requireSecret(key) {
+  const value = getSecret(key);
+  if (!value) {
+    throw new Error(`Required secret ${key} is not set`);
+  }
+  return value;
 }
 
 /**
@@ -147,7 +163,7 @@ function validateSecrets() {
   // Warn about insecure defaults in production
   if (getSecret('NODE_ENV') === 'production') {
     const insecure = [];
-    
+
     if (getSecret('JWT_SECRET', '').includes('dev_secret')) {
       insecure.push('JWT_SECRET contains default value');
     }
@@ -167,6 +183,7 @@ function validateSecrets() {
 module.exports = {
   loadSecrets,
   getSecret,
+  requireSecret,
   getNumber,
   getBoolean,
   getArray,

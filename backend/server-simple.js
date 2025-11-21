@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { loadSecrets, getSecret } = require('../config/secrets');
+const { loadSecrets, getSecret } = require('../config/secrets.cjs');
 const { initializeDatabase } = require('../database/init');
 
 const app = express();

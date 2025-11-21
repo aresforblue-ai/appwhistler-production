@@ -2,7 +2,7 @@
 // Tiered rate limiter that differentiates between anonymous, authenticated, and admin users
 
 const rateLimit = require('express-rate-limit');
-const { getNumber, getArray } = require('../../config/secrets');
+const { getNumber, getArray } = require('../../config/secrets.cjs');
 
 const windowMinutes = getNumber('RATE_LIMIT_WINDOW', 15);
 const windowMs = windowMinutes * 60 * 1000;

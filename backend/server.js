@@ -18,7 +18,7 @@ const {
   getNumber,
   getArray,
   getDatabaseConfig
-} = require('../config/secrets');
+} = require('../config/secrets.cjs');
 
 loadSecrets();
 

@@ -1,7 +1,7 @@
 // src/backend/utils/poolMonitor.js
 // PostgreSQL connection pool monitoring and diagnostics
 
-const { getNumber, getSecret } = require('../../config/secrets');
+const { getNumber, getSecret } = require('../../config/secrets.cjs');
 
 class PoolMonitor {
   constructor(pool) {

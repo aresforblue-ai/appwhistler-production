@@ -1,7 +1,7 @@
 // src/backend/utils/cacheManager.js
 // Redis-backed cache with in-memory fallback for query results
 
-const { getSecret } = require('../../config/secrets');
+const { getSecret } = require('../../config/secrets.cjs');
 
 class CacheManager {
   constructor() {

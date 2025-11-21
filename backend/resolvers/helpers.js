@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { createGraphQLError } = require('../utils/errorHandler');
-const { requireSecret } = require('../../config/secrets');
+const { requireSecret } = require('../../config/secrets.cjs');
 
 const JWT_SECRET = requireSecret('JWT_SECRET');
 

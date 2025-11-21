@@ -11,7 +11,7 @@ const {
   sendAccountLockoutEmail
 } = require('../utils/email');
 const { sanitizePlainText } = require('../utils/sanitizer');
-const { getNumber } = require('../../config/secrets');
+const { getNumber } = require('../../config/secrets.cjs');
 const { generateToken, verifyToken, hashToken, requireAuth } = require('./helpers');
 
 const PASSWORD_RESET_TOKEN_TTL_MIN = getNumber('PASSWORD_RESET_TOKEN_TTL_MIN', 30);
