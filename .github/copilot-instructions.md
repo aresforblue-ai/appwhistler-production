@@ -2,97 +2,174 @@
 
 ## Project Overview
 
-AppWhistler is a truth-first app recommender with AI-powered fact-checking. This is a **single-file React application** (`src/App.jsx`) built with Vite, featuring a minimalist glassmorphism design with dark/light modes.
+AppWhistler is a truth-first app recommender with AI-powered fact-checking. This is a **full-stack application** with:
+- **Frontend**: Vite + React with Apollo Client (port 3000), minimalist glassmorphism design with dark/light modes
+- **Backend**: Express + Apollo GraphQL Server (port 5000) with PostgreSQL, WebSockets, background job queues
 
 ## Architecture
 
-### Monolithic Component Structure
-- **All components live in `src/App.jsx`** (849 lines) - Header, Navigation, HeroSection, DiscoverTab, FactCheckTab, ProfileTab, AppCard, AuthModal, Footer
-- Components are defined as functions at module scope, not nested
-- State management uses React hooks with localStorage persistence for user data and dark mode
+### Frontend (src/)
+- **Single-file React app**: All components in `src/App.jsx` (237 lines) - no component file splitting by design
+- **GraphQL Integration**: Apollo Client configured in `src/apollo/client.js` with HTTP/WebSocket split links
+- **State**: React hooks + localStorage for user data (`appwhistler_user`, `appwhistler_token`) and dark mode (`darkMode`)
+- Entry point: `src/main.jsx` wraps `<App />` in `<ApolloProvider>`
 
-### Key State Patterns
+### Backend (backend/)
+- **GraphQL API**: `schema.js` (479 lines) defines types (User, App, FactCheck, Review, BlockchainTransaction)
+- **Resolvers**: `resolvers.js` (1811 lines) contains all business logic - authentication, CRUD operations, fact-checking
+- **Server**: `backend/server.js` (315 lines) orchestrates Express + Apollo + Socket.io + PostgreSQL pool
+- **N+1 Prevention**: `utils/dataLoader.js` implements BatchLoader pattern for efficient database queries
+- **Job Queues**: `queues/jobManager.js` uses BullMQ with Redis (falls back to in-memory if Redis unavailable)
+
+### Critical Configuration Pattern: Missing `config/secrets`
+**IMPORTANT**: All backend files import `require('../../config/secrets')` or `require('../config/secrets')` but this directory/module **DOES NOT EXIST** in the codebase. This is a **broken import pattern** that will cause runtime errors. The module is expected to export:
 ```javascript
-// User persistence via localStorage keys:
-localStorage.getItem('appwhistler_user')        // JSON: { username, truthScore }
-localStorage.getItem('appwhistler_darkmode')   // String: 'true' | 'false'
+{ loadSecrets, getSecret, requireSecret, getNumber, getArray, getDatabaseConfig }
 ```
+Currently used in: `server.js`, `resolvers.js`, `auth.js`, `envValidator.js`, `email.js`, `cacheManager.js`, and 6+ other files.
 
-### API Integration
-- Backend URL from env: `VITE_API_URL` (defaults to `http://localhost:5000`)
-- Single endpoint used: `GET /api/v1/apps/trending?search=${query}`
-- Expected response: `{ success: boolean, data: [...apps] }`
-- No authentication on API calls yet
+**Workaround**: Create `config/secrets.js` that wraps `process.env` or refactor all imports to use `dotenv` directly. Likely intention was centralized env variable access with defaults/validation.
 
-## Tech Stack & Build
+## Development Workflow
 
-- **Runtime**: Vite 5.x with HMR (`import.meta.hot`)
-- **Styling**: Tailwind CSS with custom utilities in `src/index.css` and component styles in `src/App.css`
-- **Fonts**: Space Grotesk (display), Inter (body) - referenced in `tailwind.config.js`
-- **Monitoring**: Sentry with env vars `VITE_SENTRY_DSN` and `VITE_SENTRY_TRACES_SAMPLE_RATE`
-
-### Commands
+### Starting the Stack
 ```bash
-npm run dev       # Start dev server on port 3000 (host 0.0.0.0)
-npm run build     # Production build with manual chunks (vendor, apollo)
-npm run preview   # Preview production build
+# Frontend (port 3000)
+npm run dev       # Vite dev server with HMR
+
+# Backend (port 5000) - requires setup first
+cd backend
+npm install       # Separate package.json (not shown in workspace)
+node server.js    # Or npm start if configured
 ```
 
-### CDN & Asset Strategy
-- `vite.config.js` supports `CDN_URL` env var for asset base path
-- Output structure: `js/`, `css/`, `images/`, `fonts/` directories with content hashing
-- Manual chunks split `react`/`react-dom`/`react-router-dom` into `vendor`, Apollo GraphQL into `apollo` (though Apollo not yet imported)
+**Prerequisites**:
+1. PostgreSQL database running (see DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD env vars)
+2. Create `config/secrets.js` module or refactor imports to use `dotenv` directly
+3. Run database migrations (schema not provided in workspace, inferred from GraphQL types)
 
-## Design System
+### Environment Variables
+Frontend (Vite - prefix with `VITE_`):
+- `VITE_API_URL` - Backend URL (default: `http://localhost:5000`)
+- `VITE_WS_URL` - WebSocket URL (default: `ws://localhost:5000`)
+- `VITE_SENTRY_DSN` - Optional Sentry monitoring
+- `VITE_SENTRY_TRACES_SAMPLE_RATE` - Sentry trace sampling
 
-### Color Palette
-- Primary: Blue (59 130 246) / Indigo (99 102 241) gradients
-- Accent: Cyan (34 211 238), Emerald (34 197 94)
-- Dark mode: Slate-950 background, Slate-900 secondary
-- Glassmorphism: `backdrop-blur-xl`, opacity-based overlays
+Backend (Node.js):
+- **Required**: `JWT_SECRET`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `NODE_ENV`
+- **Recommended**: `HUGGINGFACE_API_KEY` (AI fact-checking), `SENDGRID_API_KEY` (emails), `REDIS_URL` (job queues)
+- **Optional**: `SENTRY_DSN`, `INFURA_PROJECT_ID`/`ALCHEMY_API_KEY` (blockchain), `PINATA_API_KEY`/`PINATA_SECRET_KEY` (IPFS)
+- **Security**: `ALLOWED_ORIGINS` (comma-separated CORS origins), `PORT` (default: 5000)
 
-### Component Conventions
-- All interactive elements use `rounded-2xl` or `rounded-3xl` borders
-- Gradient backgrounds: `from-blue-500 to-indigo-500` pattern throughout
-- Dark mode toggled via `.dark` class on `<body>`, checked in components with ternary expressions
-- Shadow styles: `shadow-lg shadow-blue-500/30` for neon effects
+Validation on startup: `backend/utils/envValidator.js` checks required vars, prints warnings for missing recommended vars.
 
-## Development Patterns
+## Key Patterns & Conventions
 
-### Adding New Components
-1. Define function component at module scope in `App.jsx` (after existing components)
-2. Follow naming: PascalCase for components, camelCase for utilities
-3. Accept `darkMode` prop for theme-aware styling
-4. Use Tailwind classes with dark mode variants: `${darkMode ? 'bg-slate-950' : 'bg-white'}`
+### Authentication Flow
+1. User logs in via GraphQL `login` mutation (email/password) → `resolvers.js` validates credentials
+2. Backend generates JWT with `generateToken(userId)` using `JWT_SECRET`
+3. Token stored in `localStorage.getItem('appwhistler_token')`
+4. Apollo Client's `authLink` adds `Authorization: Bearer ${token}` header to all requests
+5. Backend middleware `authenticateToken` (from `middleware/auth.js`) verifies token, attaches `req.user` to context
+6. GraphQL context includes `{ pool, req, loaders, user: req.user }` for all resolvers
 
-### State & Side Effects
-- Search uses 500ms debounce via `useEffect` cleanup pattern
-- Dark mode syncs to body class and localStorage on every toggle
-- User data fetched from localStorage on mount, persisted on login
+### Database Access
+- Connection pool: `const pool = new Pool(getDatabaseConfig())` in `server.js`
+- Pool monitoring: `utils/poolMonitor.js` tracks connection health (check `/health/db-pool`)
+- Use DataLoaders: Access via `context.loaders` in resolvers to batch queries (e.g., `loaders.userById.load(userId)`)
+- **Never** construct raw SQL with string interpolation - use parameterized queries: `pool.query('SELECT * FROM users WHERE id = $1', [userId])`
 
-### Error Handling
-- Global error handlers in `src/main.jsx` log to console
-- Sentry initialized in `App.jsx` with guard: `window.__APPWHISTLER_SENTRY__`
-- API errors caught and logged, don't crash UI
+### GraphQL Complexity & Rate Limiting
+- Complexity plugin: `middleware/graphqlComplexity.js` limits query depth/cost to prevent abuse
+- Rate limiter: `middleware/rateLimiter.js` uses tiered limits (per user if authenticated, per IP otherwise)
+- Applied to `/graphql` and `/api/` routes via `perUserRateLimiter` middleware
 
-## HTML Structure
+### Background Jobs
+Job types registered in `server.js`:
+- `email-jobs` → `handleEmailJob` (password resets, welcome emails)
+- `blockchain-jobs` → `handleBlockchainJob` (write fact-checks to chain)
+- `fact-check-jobs` → `handleFactCheckJob` (async AI processing)
 
-### Development vs Production
-- Production `index.html` is minimal (favicon: `/vite.svg`, no debug scripts)
-- Development version may include debug console logging and error handlers
-- Both use `<script type="module" src="/src/main.jsx">` as entry point
+Add jobs: `jobManager.addJob('email', { to, subject, body })` from resolvers
 
-## Known Gotchas
+### Real-Time Updates
+WebSocket setup in `server.js`:
+- Socket.io server on same port as HTTP
+- Clients subscribe: `socket.emit('subscribe:factchecks', category)`
+- Broadcast from resolvers: `global.broadcastFactCheck(category, data)`
 
-- **No component file splitting**: Everything in one file by design - don't extract components to separate files without explicit intent
-- **Apollo/GraphQL setup in config but not imported**: Vite config references Apollo chunks, but `@apollo/client` not in dependencies yet
-- **Mock data fallbacks**: `DEFAULT_FACT_CHECKS` used when API unavailable
-- **Placeholder icon**: `/placeholder-icon.png` referenced but may not exist
-- **Dark mode sync**: Body class must be manually applied via `useEffect`, not automatic
+Apollo Client uses GraphQL subscriptions via `GraphQLWsLink` for real-time queries.
+
+## Frontend Design System
+
+### Glassmorphism UI
+- Colors: Blue/Indigo gradients (`from-blue-500 to-indigo-500`), Cyan/Emerald accents
+- Dark mode: Toggle via `setDarkMode` → updates `localStorage.darkMode` + `document.documentElement.classList.toggle('dark')`
+- Effects: `backdrop-blur-xl`, `rounded-2xl`/`rounded-3xl` borders, `shadow-lg shadow-blue-500/30` glows
+- All components accept `darkMode` prop for theme-aware conditional classes
+
+### Component Guidelines
+1. Define at module scope in `App.jsx` (no nesting, no separate files)
+2. PascalCase for components, camelCase for utilities
+3. Use Tailwind variants: `${darkMode ? 'bg-slate-950' : 'bg-white'}`
+
+## API Endpoints
+
+REST (legacy/quick actions):
+- `GET /api/v1/apps/trending` - Top 10 verified apps
+- `GET /health` - Server + DB health check
+- `GET /health/db-pool` - Detailed pool diagnostics
+- `POST /api/v1/privacy/*` - GDPR/CCPA compliance endpoints (see `routes/privacy.js`)
+- `POST /api/v1/upload/*` - File uploads (see `routes/upload.js`)
+
+GraphQL:
+- `POST /graphql` - All queries/mutations (introspection disabled in production)
+- WebSocket subscriptions via `/graphql` (GraphQLWsLink)
+
+## Security & Error Handling
+
+### Middleware Chain (in order)
+1. Helmet (CSP, HSTS, frameguard) - `helmet()` with custom CSP directives
+2. CORS - Validates origin against `ALLOWED_ORIGINS` env var
+3. Body parsers - 10mb limit on JSON/urlencoded
+4. `authenticateToken` - Populates `req.user` if valid JWT (doesn't block anonymous requests)
+5. `perUserRateLimiter` - Tiered rate limits
+6. Route handlers
+7. Sentry error handler (if `SENTRY_DSN` set)
+8. 404 handler
+9. Global error handler (logs + returns 500)
+
+### Input Validation & Sanitization
+- **Validation**: `utils/validation.js` exports validators (e.g., `validateEmail`, `validatePassword`, `validateRating`)
+- **Sanitization**: `utils/sanitizer.js` exports `sanitizePlainText`, `sanitizeRichText`, `sanitizeJson`
+- **Pattern**: Validate inputs in resolvers before DB operations, sanitize user-generated content before storage
+
+### Error Patterns
+- Use `createGraphQLError(message, code)` from `utils/errorHandler.js` for consistent error formatting
+- Wrap DB operations in `safeDatabaseOperation(fn)` for automatic error handling
+- Sentry captures exceptions if DSN configured
+
+## Known Issues & Gotchas
+
+1. **BROKEN IMPORTS**: `config/secrets` module doesn't exist - all backend files will fail at runtime
+2. **Missing migrations**: Database schema must match GraphQL types in `schema.js` but no migration files exist
+3. **Dual package.json**: Frontend has `package.json`, backend likely has separate one (not in workspace view)
+4. **Apollo fully integrated**: Frontend uses Apollo Client with GraphQL queries (not mock data as previously documented)
+5. **WebSocket port coordination**: Both frontend dev server and backend use WebSockets - ensure `VITE_WS_URL` points to backend
+6. **No tests**: Zero test files - no Jest/Vitest/Cypress setup
 
 ## Troubleshooting
 
-### Dev Server Issues
-- Ensure all dependencies installed: `npm install`
-- Check port 3000 isn't already in use
-- Verify Node.js version compatibility with Vite 5.x (Node 18+)
+### Backend won't start
+- Check PostgreSQL is running: `psql -U <DB_USER> -d <DB_NAME> -h <DB_HOST>`
+- Verify `config/secrets.js` exists or refactor to use `dotenv`
+- Run `backend/utils/envValidator.js` standalone to check config
+
+### Frontend can't connect to backend
+- Confirm backend is on port 5000: `curl http://localhost:5000/health`
+- Check CORS: `ALLOWED_ORIGINS` must include `http://localhost:3000`
+- Apollo DevTools: Check Network tab for GraphQL requests/responses
+
+### Job queue failures
+- Redis optional: If `REDIS_URL` not set, jobs run in-memory (dev mode)
+- Check worker registration: `registerWorker(queueName, handler)` must be called before adding jobs
