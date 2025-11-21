@@ -1,18 +1,37 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@apollo/client';
-import { GET_TRENDING_APPS } from './graphql/queries';
 
-// Beautiful app icon with emoji fallbacks
+// Mock apps data with recognizable brands
+const MOCK_APPS = [
+  { id: 1, name: "Facebook", description: "Connect with friends and the world around you on Facebook", truthRating: 68, category: "social", isVerified: true, downloadCount: 2800000000, icon: "📘" },
+  { id: 2, name: "Google", description: "Search the world's information including webpages, images, videos and more", truthRating: 92, category: "research", isVerified: true, downloadCount: 5000000000, icon: "🔍" },
+  { id: 3, name: "Twitter", description: "Join the conversation and see what's happening in the world right now", truthRating: 64, category: "news", isVerified: true, downloadCount: 450000000, icon: "🐦" },
+  { id: 4, name: "LinkedIn", description: "Connect with professionals, find jobs, and grow your career", truthRating: 88, category: "social", isVerified: true, downloadCount: 930000000, icon: "💼" },
+  { id: 5, name: "WhatsApp", description: "Simple, reliable, private messaging and calling for free", truthRating: 85, category: "social", isVerified: true, downloadCount: 2000000000, icon: "💬" },
+  { id: 6, name: "Instagram", description: "Create and share photos, stories, and reels with friends", truthRating: 71, category: "social", isVerified: true, downloadCount: 2000000000, icon: "📷" }
+];
+
+// Beautiful app icon with recognizable brand icons
 function AppIcon({ app }) {
-  const emojis = { news: '📰', research: '🔬', verification: '✅', social: '💬', security: '🔒' };
-  const gradients = ['from-blue-500 to-cyan-500', 'from-purple-500 to-pink-500', 'from-green-500 to-emerald-500', 'from-orange-500 to-red-500', 'from-indigo-500 to-purple-500'];
+  const iconMap = {
+    'Facebook': '📘',
+    'Google': '🔍', 
+    'Twitter': '🐦',
+    'LinkedIn': '💼',
+    'WhatsApp': '💬',
+    'Instagram': '📷'
+  };
+  const gradients = {
+    'Facebook': 'from-blue-600 to-blue-700',
+    'Google': 'from-red-500 via-yellow-500 to-green-500',
+    'Twitter': 'from-sky-400 to-blue-500',
+    'LinkedIn': 'from-blue-700 to-blue-800',
+    'WhatsApp': 'from-green-500 to-emerald-600',
+    'Instagram': 'from-purple-500 via-pink-500 to-orange-500'
+  };
   return (
-    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradients[app.name.charCodeAt(0) % 5]} flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-3 relative overflow-hidden group`}>
+    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradients[app.name] || 'from-slate-400 to-slate-600'} flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-3 relative overflow-hidden group`}>
       <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      <span className="relative text-3xl filter drop-shadow-lg animate-pulse">{emojis[app.category] || '📱'}</span>
-      <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white/50 backdrop-blur-sm rounded-full flex items-center justify-center text-xs font-black text-slate-800 shadow-lg">
-        {app.name.charAt(0)}
-      </div>
+      <span className="relative text-3xl filter drop-shadow-lg">{iconMap[app.name] || app.icon || '📱'}</span>
     </div>
   );
 }
@@ -39,9 +58,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const categories = ['all', 'news', 'research', 'verification', 'social', 'security'];
-
-  const { loading, error, data } = useQuery(GET_TRENDING_APPS, { variables: { limit: 20 } });
-  const apps = data?.trendingApps || [];
+  const [apps] = useState(MOCK_APPS);
+  const loading = false;
 
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
@@ -66,7 +84,7 @@ function App() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-sky-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white via-30% to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 animate-gradient">
         
         <header className="sticky top-0 z-50 backdrop-blur-2xl bg-gradient-to-b from-white/70 via-white/50 to-transparent dark:from-slate-950/70 dark:via-slate-950/50 border-b border-white/30 dark:border-slate-700/30 shadow-lg">
           <div className="max-w-7xl mx-auto px-6 py-5">
@@ -161,22 +179,7 @@ function App() {
             </div>
           )}
 
-          {error && (
-            <div className="text-center py-24 bg-red-50 dark:bg-red-900/20 rounded-3xl border-2 border-red-200 dark:border-red-800">
-              <div className="text-7xl mb-6 animate-bounce">⚠️</div>
-              <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-3">Connection Error</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-2 text-lg">Unable to connect to backend server</p>
-              <p className="text-sm text-slate-500 mb-8">Make sure the backend is running on port 5000</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="px-8 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl font-bold hover:scale-105 transition-transform shadow-2xl text-lg"
-              >
-                Retry Connection
-              </button>
-            </div>
-          )}
-
-          {!loading && !error && (
+          {!loading && (
             <>
               <div className="text-center mb-8">
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
