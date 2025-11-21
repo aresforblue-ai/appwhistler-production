@@ -228,16 +228,16 @@ class APIKeyManager {
    */
   async getUsageAnalytics(userId, keyId, days = 30) {
     const result = await this.pool.query(
-      `SELECT 
+      `SELECT
          DATE(created_at) as date,
          COUNT(*) as requests
        FROM api_key_usage
        WHERE api_key_id = $1
-         AND created_at > NOW() - INTERVAL '${days} days'
-         AND api_key_id IN (SELECT id FROM api_keys WHERE user_id = $2)
+         AND created_at > NOW() - INTERVAL '1 day' * $2
+         AND api_key_id IN (SELECT id FROM api_keys WHERE user_id = $3)
        GROUP BY DATE(created_at)
        ORDER BY date DESC`,
-      [keyId, userId]
+      [keyId, days, userId]
     );
 
     return result.rows;

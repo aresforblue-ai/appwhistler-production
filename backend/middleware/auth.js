@@ -4,6 +4,7 @@
 const jwt = require('jsonwebtoken');
 const { GraphQLError } = require('graphql');
 const { requireSecret, getSecret } = require('../../config/secrets');
+const cacheManager = require('../utils/cacheManager');
 
 const JWT_SECRET = requireSecret('JWT_SECRET');
 const REFRESH_TOKEN_SECRET = getSecret('REFRESH_TOKEN_SECRET', JWT_SECRET);
@@ -203,29 +204,68 @@ function generateJTI() {
 }
 
 /**
+ * Calculate TTL from JWT token expiration
+ * @param {string} token - JWT token
+ * @returns {number} TTL in seconds, or default 604800 (7 days)
+ */
+function calculateTokenTTL(token) {
+  try {
+    // Decode without verification to get expiry
+    const decoded = jwt.decode(token);
+    if (decoded && decoded.exp) {
+      const now = Math.floor(Date.now() / 1000);
+      const ttl = decoded.exp - now;
+      // Ensure TTL is positive
+      return ttl > 0 ? ttl : 604800;
+    }
+  } catch (error) {
+    console.warn('Error calculating token TTL:', error);
+  }
+  // Default to 7 days if unable to calculate
+  return 604800;
+}
+
+/**
  * Check if token is blacklisted (for logout)
- * In production, use Redis for fast lookups
+ * Uses Redis with in-memory fallback
  */
 async function checkTokenBlacklist(jti) {
-  // Simple in-memory implementation (use Redis in production)
-  if (!global.tokenBlacklist) {
-    global.tokenBlacklist = new Set();
+  if (!jti) return false;
+
+  try {
+    // Check cache (Redis or in-memory)
+    const blacklisted = await cacheManager.get(`blacklist:${jti}`);
+    return blacklisted === true || blacklisted === '1';
+  } catch (error) {
+    console.error('Error checking token blacklist:', error);
+    // On error, fallback to checking in-memory set
+    if (!global.tokenBlacklist) {
+      global.tokenBlacklist = new Set();
+    }
+    return global.tokenBlacklist.has(jti);
   }
-  return global.tokenBlacklist.has(jti);
 }
 
 /**
  * Blacklist a token (logout functionality)
  * @param {string} jti - Token ID to blacklist
+ * @param {number} expirySeconds - TTL in seconds (should match token expiration)
  */
-async function blacklistToken(jti) {
-  if (!global.tokenBlacklist) {
-    global.tokenBlacklist = new Set();
+async function blacklistToken(jti, expirySeconds = 604800) {
+  if (!jti) return;
+
+  try {
+    // Store in cache (Redis or in-memory) with TTL
+    await cacheManager.set(`blacklist:${jti}`, true, expirySeconds);
+    console.log(`🔒 Token blacklisted: ${jti} (TTL: ${expirySeconds}s)`);
+  } catch (error) {
+    console.error('Error blacklisting token:', error);
+    // Fallback to in-memory set (without TTL)
+    if (!global.tokenBlacklist) {
+      global.tokenBlacklist = new Set();
+    }
+    global.tokenBlacklist.add(jti);
   }
-  global.tokenBlacklist.add(jti);
-  
-  // In production, store in Redis with TTL matching token expiration
-  // await redisClient.setex(`blacklist:${jti}`, 604800, '1'); // 7 days
 }
 
 /**
@@ -327,6 +367,7 @@ module.exports = {
   generateRefreshToken,
   refreshAccessToken,
   blacklistToken,
+  calculateTokenTTL,
   OAuth2,
   MFA
 };

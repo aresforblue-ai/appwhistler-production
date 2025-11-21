@@ -1,0 +1,66 @@
+# EditorConfig helps maintain consistent coding styles across editors and IDEs
+# https://editorconfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Universal settings for all files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# JavaScript/TypeScript files
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 2
+
+# JSON files
+[*.json]
+indent_style = space
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# SQL files
+[*.sql]
+indent_style = space
+indent_size = 2
+
+# HTML files
+[*.html]
+indent_style = space
+indent_size = 2
+
+# CSS files
+[*.{css,scss,sass,less}]
+indent_style = space
+indent_size = 2
+
+# Configuration files
+[{package.json,.prettierrc,.eslintrc,.babelrc}]
+indent_style = space
+indent_size = 2
+
+# Windows-specific files
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# Makefiles (must use tabs)
+[Makefile]
+indent_style = tab
+
+# Shell scripts (must use LF)
+[*.sh]
+end_of_line = lf
