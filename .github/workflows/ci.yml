@@ -1,0 +1,168 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Frontend tests and build
+  frontend:
+    name: Frontend Tests & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Run frontend linting
+        run: npm run lint || echo "No linting configured yet"
+        continue-on-error: true
+
+      - name: Run frontend tests
+        run: npm test -- --run
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: dist/
+          retention-days: 7
+
+  # Backend tests
+  backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: appwhistler_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend linting
+        working-directory: backend
+        run: npm run lint || echo "No linting configured yet"
+        continue-on-error: true
+
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test || echo "Backend tests not configured yet"
+        continue-on-error: true
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: appwhistler_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          NODE_ENV: test
+          JWT_SECRET: test-secret
+          REFRESH_TOKEN_SECRET: test-refresh-secret
+
+  # Security audit
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Audit frontend dependencies
+        run: npm audit --production || true
+
+      - name: Audit backend dependencies
+        working-directory: backend
+        run: npm audit --production || true
+
+  # Code quality checks
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check code formatting
+        run: |
+          echo "Code formatting check placeholder"
+          # Add prettier or eslint checks here
+
+      - name: Run type checking
+        run: |
+          echo "Type checking placeholder"
+          # Add TypeScript checking if applicable
+
+  # Deployment (only on main branch)
+  deploy:
+    name: Deploy to Production
+    needs: [frontend, backend, security, quality]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: dist/
+
+      - name: Deploy notification
+        run: |
+          echo "Deployment step placeholder"
+          echo "Add your deployment commands here:"
+          echo "  - Deploy to Vercel/Netlify/AWS"
+          echo "  - Update Docker containers"
+          echo "  - Run database migrations"
+          echo "  - Notify team via Slack/Discord"

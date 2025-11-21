@@ -3,7 +3,9 @@
 
 // Import required packages
 const express = require('express');
-const { ApolloServer } = require('apollo-server-express');
+const { ApolloServer } = require('@apollo/server');
+const { expressMiddleware } = require('@apollo/server/express4');
+const { ApolloServerPluginDrainHttpServer } = require('@apollo/server/plugin/drainHttpServer');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
@@ -187,19 +189,10 @@ app.get('/api/v1/apps/trending', async (req, res) => {
 const apolloServer = new ApolloServer({
   typeDefs,
   resolvers,
-  plugins: [createComplexityPlugin()],
-  context: ({ req }) => {
-    // Initialize batch loaders for this request to prevent N+1 queries
-    const loaders = createBatchLoaders(pool);
-    
-    // Make database pool and request available in all resolvers
-    return { 
-      pool, 
-      req,
-      loaders,
-      user: req.user // Will be set by auth middleware
-    };
-  },
+  plugins: [
+    ApolloServerPluginDrainHttpServer({ httpServer }),
+    createComplexityPlugin()
+  ],
   formatError: (error) => {
     // Log errors but don't expose internal details to clients
     console.error('GraphQL Error:', error);
@@ -210,7 +203,7 @@ const apolloServer = new ApolloServer({
     };
   },
   introspection: NODE_ENV !== 'production', // Disable in prod
-  playground: NODE_ENV !== 'production',
+  // Note: Apollo Studio Sandbox replaces GraphQL Playground in v4+
 });
 
 // Start Apollo server and apply middleware
@@ -218,12 +211,36 @@ async function startApolloServer() {
   console.log('🔄 Starting Apollo Server...');
   await apolloServer.start();
   console.log('✅ Apollo Server started');
-  
-  apolloServer.applyMiddleware({ 
-    app, 
-    path: '/graphql',
-    cors: false // Already handled above
-  });
+
+  // Apply Apollo middleware to Express
+  app.use(
+    '/graphql',
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+    }),
+    express.json(),
+    expressMiddleware(apolloServer, {
+      context: async ({ req }) => {
+        // Initialize batch loaders for this request to prevent N+1 queries
+        const loaders = createBatchLoaders(pool);
+
+        // Make database pool and request available in all resolvers
+        return {
+          pool,
+          req,
+          loaders,
+          user: req.user // Will be set by auth middleware
+        };
+      },
+    })
+  );
   console.log('✅ Apollo middleware applied to /graphql');
 }
 
