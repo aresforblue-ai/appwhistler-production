@@ -93,24 +93,24 @@ html {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #fafafa;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #94a3b8, #64748b);
+  background: linear-gradient(135deg, #bae6fd, #7dd3fc);
   border-radius: 10px;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: #171717;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #475569, #334155);
+  background: linear-gradient(135deg, #075985, #0ea5e9);
 }
 
 .spinner {

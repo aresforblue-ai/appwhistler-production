@@ -8,53 +8,53 @@ function AppCard({ app }) {
   const scoreColor = truthScore >= 85 ? 'from-emerald-400 to-green-500' : truthScore >= 70 ? 'from-amber-400 to-orange-500' : 'from-rose-400 to-red-500';
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-7 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-2 border-slate-200 dark:border-slate-800 group">
-      <div className="flex items-start justify-between mb-5">
+    <div className="bg-white dark:bg-fog-900 rounded-2xl p-5 sm:p-6 hover:shadow-xl hover:scale-[1.02] active:scale-[1.01] transition-all duration-300 border border-fog-200 dark:border-fog-800 group touch-manipulation">
+      <div className="flex items-start justify-between mb-4">
         <AppIcon app={app} />
         {app.isVerified && (
-          <div className="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-900/30 border-2 border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-400 text-xs font-black flex items-center gap-1.5 shadow-lg">
-            <span className="text-base">🛡️</span>
+          <div className="px-2.5 py-1 rounded-full bg-ice-50 dark:bg-ice-900/30 border border-ice-300 dark:border-ice-800 text-ice-700 dark:text-ice-400 text-[10px] font-black flex items-center gap-1 shadow-md">
+            <span className="text-sm">🛡️</span>
             <span>VERIFIED</span>
           </div>
         )}
       </div>
 
-      <h3 className="text-2xl font-display font-black mb-3 text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{app.name}</h3>
+      <h3 className="text-xl sm:text-2xl font-display font-black mb-3 text-fog-800 dark:text-fog-100 group-hover:text-ice-600 dark:group-hover:text-ice-400 transition-colors">{app.name}</h3>
 
-      <div className="mb-4">
-        <span className="inline-block px-3 py-1.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400 uppercase tracking-wider shadow-md">
+      <div className="mb-3">
+        <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-black bg-ice-50 dark:bg-ice-900/30 border border-ice-300 dark:border-ice-800 text-ice-700 dark:text-ice-400 uppercase tracking-wider shadow-sm">
           {app.category || 'general'}
         </span>
       </div>
 
-      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed line-clamp-3">{app.description || 'No description available'}</p>
+      <p className="text-sm text-fog-600 dark:text-fog-400 mb-5 leading-relaxed line-clamp-3">{app.description || 'No description available'}</p>
 
-      <div className="space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Truth Score</span>
-          <div className={`px-3 py-1.5 rounded-full border-2 ${badge.bg} text-xs font-black flex items-center gap-1.5 shadow-lg`}>
+          <span className="text-[10px] font-black text-fog-500 dark:text-fog-400 uppercase tracking-wider">Truth Score</span>
+          <div className={`px-2.5 py-1 rounded-full border ${badge.bg} text-[10px] font-black flex items-center gap-1 shadow-md`}>
             <span>{badge.emoji}</span>
             <span>{badge.text}</span>
           </div>
         </div>
 
         <div className="relative">
-          <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
+          <div className="w-full h-2.5 bg-fog-100 dark:bg-fog-800 rounded-full overflow-hidden shadow-inner">
             <div
-              className={`h-full bg-gradient-to-r ${scoreColor} transition-all duration-1000 rounded-full shadow-lg`}
+              className={`h-full bg-gradient-to-r ${scoreColor} transition-all duration-1000 rounded-full shadow-md`}
               style={{ width: `${truthScore}%` }}
             />
           </div>
-          <div className="absolute -top-2 right-0">
-            <span className="text-3xl font-black text-slate-800 dark:text-slate-100">
+          <div className="absolute -top-1 right-0">
+            <span className="text-2xl sm:text-3xl font-black text-fog-800 dark:text-fog-100">
               {truthScore}
-              <span className="text-sm text-slate-400">%</span>
+              <span className="text-xs text-fog-400">%</span>
             </span>
           </div>
         </div>
       </div>
 
-      <button className="w-full mt-7 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl text-sm font-black hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 shadow-xl">
+      <button className="w-full mt-5 py-3 sm:py-3.5 bg-gradient-to-r from-ice-500 to-ice-600 text-white rounded-xl text-sm font-black hover:scale-[1.02] active:scale-[1.01] hover:shadow-lg transition-all duration-300 shadow-md touch-manipulation">
         View Details →
       </button>
     </div>
