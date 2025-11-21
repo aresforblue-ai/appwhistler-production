@@ -2,7 +2,7 @@
 // Job handlers for background tasks
 
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
-const blockchain = require('../../blockchain/blockchain');
+const blockchain = require('../../blockchain/blockchain.cjs');
 
 /**
  * Handler for email jobs

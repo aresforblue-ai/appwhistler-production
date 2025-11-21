@@ -1,7 +1,7 @@
 // src/backend/middleware/rateLimiter.js
 // Tiered rate limiter that differentiates between anonymous, authenticated, and admin users
 
-const rateLimit = require('express-rate-limit');
+const { rateLimit } = require('express-rate-limit');
 const { getNumber, getArray } = require('../../config/secrets.cjs');
 
 const windowMinutes = getNumber('RATE_LIMIT_WINDOW', 15);
@@ -42,16 +42,13 @@ function isWhitelisted(req) {
 
 const perUserRateLimiter = rateLimit({
   windowMs,
-  standardHeaders: true,
+  standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: 'Too many requests, please try again later.',
   skip: (req) => isWhitelisted(req),
-  keyGenerator: (req) => {
-    if (req.user?.userId) {
-      return `user:${req.user.userId}`;
-    }
-    return `ip:${req.ip}`;
-  },
+  // Don't use custom keyGenerator - let express-rate-limit handle IP addresses properly
+  // It will automatically normalize IPv6 addresses
+  // For user-based limiting, we'll use a different approach
   max: (req, res) => resolveLimit(req),
   handler: (req, res, next, options) => {
     res.status(options.statusCode).json({
