@@ -3,7 +3,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -196,7 +196,10 @@ async function seedDatabase(client, type) {
 }
 
 // Run if executed directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Use pathToFileURL for Windows compatibility
+const isRunDirectly = import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isRunDirectly) {
   initializeDatabase()
     .then(() => {
       console.log('🎉 Database initialization complete!');
