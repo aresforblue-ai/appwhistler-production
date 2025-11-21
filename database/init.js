@@ -50,7 +50,18 @@ async function initializeDatabase() {
       // Install SQLite if needed
       console.log('📦 Installing SQLite...');
       const { execSync } = require('child_process');
-      execSync('npm install sqlite3', { cwd: path.join(__dirname, '..', 'backend'), stdio: 'inherit' });
+
+      // Use platform-specific npm command (npm.cmd on Windows)
+      const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+      const backendPath = path.join(__dirname, '..', 'backend');
+
+      try {
+        execSync(`${npmCmd} install sqlite3`, { cwd: backendPath, stdio: 'inherit' });
+      } catch (installError) {
+        console.error('Failed to install SQLite automatically:', installError.message);
+        console.log('Please run manually: cd backend && npm install sqlite3');
+        throw new Error('SQLite installation failed. Please install manually.');
+      }
       
       // Retry
       const sqlite3 = require('sqlite3').verbose();

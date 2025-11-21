@@ -1,4 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
+import AppCardSkeleton from './components/AppCardSkeleton';
+
+// Lazy load AppCard component for code splitting
+const AppCard = lazy(() => import('./components/AppCard'));
 
 // Mock apps data with recognizable brands
 const MOCK_APPS = [
@@ -9,49 +13,6 @@ const MOCK_APPS = [
   { id: 5, name: "WhatsApp", description: "Simple, reliable, private messaging and calling for free", truthRating: 85, category: "social", isVerified: true, downloadCount: 2000000000, icon: "💬" },
   { id: 6, name: "Instagram", description: "Create and share photos, stories, and reels with friends", truthRating: 71, category: "social", isVerified: true, downloadCount: 2000000000, icon: "📷" }
 ];
-
-// Beautiful app icon with recognizable brand icons
-function AppIcon({ app }) {
-  const iconMap = {
-    'Facebook': '📘',
-    'Google': '🔍', 
-    'Twitter': '🐦',
-    'LinkedIn': '💼',
-    'WhatsApp': '💬',
-    'Instagram': '📷'
-  };
-  const gradients = {
-    'Facebook': 'from-blue-600 to-blue-700',
-    'Google': 'from-red-500 via-yellow-500 to-green-500',
-    'Twitter': 'from-sky-400 to-blue-500',
-    'LinkedIn': 'from-blue-700 to-blue-800',
-    'WhatsApp': 'from-green-500 to-emerald-600',
-    'Instagram': 'from-purple-500 via-pink-500 to-orange-500'
-  };
-  return (
-    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${gradients[app.name] || 'from-slate-400 to-slate-600'} flex items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-3 relative overflow-hidden group`}>
-      <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      <span className="relative text-3xl filter drop-shadow-lg">{iconMap[app.name] || app.icon || '📱'}</span>
-    </div>
-  );
-}
-
-// Loading skeleton
-function AppCardSkeleton() {
-  return (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm animate-pulse">
-      <div className="flex items-start justify-between mb-4">
-        <div className="w-16 h-16 rounded-2xl bg-slate-200 dark:bg-slate-800"></div>
-        <div className="w-20 h-6 rounded-full bg-slate-200 dark:bg-slate-800"></div>
-      </div>
-      <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-3"></div>
-      <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-4"></div>
-      <div className="h-20 bg-slate-200 dark:bg-slate-800 rounded mb-4"></div>
-      <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full mb-2"></div>
-      <div className="h-10 bg-slate-200 dark:bg-slate-800 rounded"></div>
-    </div>
-  );
-}
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -188,9 +149,11 @@ function App() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredApps.map((app) => (
-                  <AppCard key={app.id} app={app} />
-                ))}
+                <Suspense fallback={<AppCardSkeleton />}>
+                  {filteredApps.map((app) => (
+                    <AppCard key={app.id} app={app} />
+                  ))}
+                </Suspense>
               </div>
 
               {filteredApps.length === 0 && apps.length > 0 && (
@@ -217,67 +180,6 @@ function App() {
           </div>
         </footer>
       </div>
-    </div>
-  );
-}
-
-function AppCard({ app }) {
-  const truthScore = app.truthRating || 0;
-  const badge = truthScore >= 85 ? { text: 'High Trust', emoji: '✓', bg: 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400' } :
-                 truthScore >= 70 ? { text: 'Moderate', emoji: '⚠', bg: 'bg-amber-50 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-400' } :
-                 { text: 'Low Trust', emoji: '!', bg: 'bg-rose-50 dark:bg-rose-900/30 border-rose-300 dark:border-rose-700 text-rose-700 dark:text-rose-400' };
-  const scoreColor = truthScore >= 85 ? 'from-emerald-400 to-green-500' : truthScore >= 70 ? 'from-amber-400 to-orange-500' : 'from-rose-400 to-red-500';
-
-  return (
-    <div className="bg-white dark:bg-slate-900 rounded-3xl p-7 hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 border-2 border-slate-200 dark:border-slate-800 group">
-      <div className="flex items-start justify-between mb-5">
-        <AppIcon app={app} />
-        {app.isVerified && (
-          <div className="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-900/30 border-2 border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-400 text-xs font-black flex items-center gap-1.5 shadow-lg">
-            <span className="text-base">🛡️</span>
-            <span>VERIFIED</span>
-          </div>
-        )}
-      </div>
-      
-      <h3 className="text-2xl font-display font-black mb-3 text-slate-800 dark:text-slate-100 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">{app.name}</h3>
-      
-      <div className="mb-4">
-        <span className="inline-block px-3 py-1.5 rounded-full text-xs font-black bg-blue-50 dark:bg-blue-900/30 border-2 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-400 uppercase tracking-wider shadow-md">
-          {app.category || 'general'}
-        </span>
-      </div>
-      
-      <p className="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed line-clamp-3">{app.description || 'No description available'}</p>
-      
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-wider">Truth Score</span>
-          <div className={`px-3 py-1.5 rounded-full border-2 ${badge.bg} text-xs font-black flex items-center gap-1.5 shadow-lg`}>
-            <span>{badge.emoji}</span>
-            <span>{badge.text}</span>
-          </div>
-        </div>
-        
-        <div className="relative">
-          <div className="w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
-            <div 
-              className={`h-full bg-gradient-to-r ${scoreColor} transition-all duration-1000 rounded-full shadow-lg`}
-              style={{ width: `${truthScore}%` }}
-            />
-          </div>
-          <div className="absolute -top-2 right-0">
-            <span className="text-3xl font-black text-slate-800 dark:text-slate-100">
-              {truthScore}
-              <span className="text-sm text-slate-400">%</span>
-            </span>
-          </div>
-        </div>
-      </div>
-      
-      <button className="w-full mt-7 py-4 bg-gradient-to-r from-sky-500 to-blue-600 text-white rounded-xl text-sm font-black hover:scale-[1.03] hover:shadow-2xl transition-all duration-300 shadow-xl">
-        View Details →
-      </button>
     </div>
   );
 }

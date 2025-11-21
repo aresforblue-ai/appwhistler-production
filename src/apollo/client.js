@@ -66,11 +66,22 @@ const client = new ApolloClient({
     typePolicies: {
       Query: {
         fields: {
-          // Cache trending apps for 5 minutes
+          // Cache trending apps with simple read strategy
           trendingApps: {
-            merge(existing, incoming) {
-              return incoming;
+            read(cached) {
+              return cached;
             },
+          },
+          // Paginated apps list with smart merging
+          apps: {
+            keyArgs: ['category', 'platform', 'minTruthRating'],
+            merge(existing, incoming) {
+              if (!existing) return incoming;
+              return {
+                ...incoming,
+                edges: [...existing.edges, ...incoming.edges]
+              };
+            }
           },
         },
       },
@@ -78,11 +89,12 @@ const client = new ApolloClient({
   }),
   defaultOptions: {
     watchQuery: {
-      fetchPolicy: 'cache-and-network', // Always check server, but show cache first
+      fetchPolicy: 'cache-and-network', // Show cache first, then update from network
       errorPolicy: 'all', // Show partial data even if there are errors
     },
     query: {
-      fetchPolicy: 'network-only', // Always get fresh data for queries
+      fetchPolicy: 'cache-first', // Use cache when available, reducing network requests
+      nextFetchPolicy: 'cache-and-network', // Subsequent fetches check network too
       errorPolicy: 'all',
     },
     mutate: {

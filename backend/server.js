@@ -23,7 +23,8 @@ const {
 loadSecrets();
 
 // Import utilities
-const { validateEnvironment, printValidationResults, getFeatureFlags } = require('./utils/envValidator');
+const logger = require('./utils/logger');
+const { validateEnvironmentOrExit, getFeatureFlags } = require('./utils/envValidator');
 const { createBatchLoaders } = require('./utils/dataLoader');
 const { authenticateToken } = require('./middleware/auth');
 const { perUserRateLimiter } = require('./middleware/rateLimiter');
@@ -33,11 +34,8 @@ const jobManager = require('./queues/jobManager');
 const { handleEmailJob, handleBlockchainJob, handleFactCheckJob } = require('./queues/jobHandlers');
 const createPrivacyRouter = require('./routes/privacy');
 
-// Validate environment before starting
-const validation = validateEnvironment();
-if (!printValidationResults(validation)) {
-  process.exit(1);
-}
+// Validate environment before starting - exits if critical variables are missing
+validateEnvironmentOrExit();
 
 // Import GraphQL schema and resolvers
 const typeDefs = require('./schema');
@@ -69,10 +67,10 @@ if (SENTRY_DSN) {
 // Test database connection
 pool.query('SELECT NOW()', (err, res) => {
   if (err) {
-    console.error('❌ Database connection failed:', err.message);
+    logger.error('❌ Database connection failed:', err.message);
     process.exit(1); // Exit if database is unreachable
   }
-  console.log('✅ Database connected at:', res.rows[0].now);
+  logger.info('✅ Database connected at:', res.rows[0].now);
 });
 
 // Initialize background job queues and register workers
@@ -80,7 +78,7 @@ jobManager.registerWorker('email-jobs', handleEmailJob);
 jobManager.registerWorker('blockchain-jobs', handleBlockchainJob);
 jobManager.registerWorker('fact-check-jobs', handleFactCheckJob);
 
-console.log('✅ Background job queues initialized');
+logger.info('✅ Background job queues initialized');
 
 // Middleware: Security headers (protects against common attacks)
 const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [
@@ -88,18 +86,24 @@ const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [
   'http://localhost:5000'
 ]);
 
-const cspDirectives = NODE_ENV === 'production' ? {
+const cspDirectives = {
   defaultSrc: ["'self'"],
   scriptSrc: ["'self'"],
-  styleSrc: ["'self'", "'unsafe-inline'"],
+  styleSrc: ["'self'", "'unsafe-inline'"],  // Tailwind needs this
   imgSrc: ["'self'", 'data:', 'https:'],
   connectSrc: ["'self'", 'ws:', 'wss:', ...allowedOrigins],
   fontSrc: ["'self'", 'https:', 'data:'],
+  objectSrc: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
   frameAncestors: ["'none'"]
-} : false;
+};
 
+// Enable in development too, but report-only
 app.use(helmet({
-  contentSecurityPolicy: cspDirectives ? { directives: cspDirectives } : false,
+  contentSecurityPolicy: NODE_ENV === 'production'
+    ? { directives: cspDirectives }
+    : { directives: cspDirectives, reportOnly: true },
   crossOriginEmbedderPolicy: false,
   referrerPolicy: { policy: 'no-referrer' },
   frameguard: { action: 'deny' },
@@ -109,6 +113,11 @@ app.use(helmet({
 
 app.use(cors({
   origin: (origin, callback) => {
+    // Reject null origins in production
+    if (!origin && NODE_ENV === 'production') {
+      return callback(new Error('Origin header required'));
+    }
+
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -135,6 +144,9 @@ app.use('/api/v1/privacy', createPrivacyRouter(pool));
 // File upload endpoints
 const uploadRouter = require('./routes/upload');
 app.use('/api/v1/upload', uploadRouter);
+
+// Import constants
+const { TRENDING_APPS_LIMIT } = require('./constants/pagination');
 
 // Health check endpoint (useful for monitoring)
 app.get('/health', async (req, res) => {
@@ -174,11 +186,11 @@ app.get('/api/v1/apps/trending', async (req, res) => {
       FROM apps
       WHERE is_verified = true
       ORDER BY download_count DESC
-      LIMIT 10
-    `);
+      LIMIT $1
+    `, [TRENDING_APPS_LIMIT]);
     res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error('Error fetching trending apps:', error);
+    logger.error('Error fetching trending apps:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -202,7 +214,7 @@ const apolloServer = new ApolloServer({
   },
   formatError: (error) => {
     // Log errors but don't expose internal details to clients
-    console.error('GraphQL Error:', error);
+    logger.error('GraphQL Error:', error);
     return {
       message: error.message,
       code: error.extensions?.code || 'INTERNAL_SERVER_ERROR',
@@ -215,16 +227,16 @@ const apolloServer = new ApolloServer({
 
 // Start Apollo server and apply middleware
 async function startApolloServer() {
-  console.log('🔄 Starting Apollo Server...');
+  logger.info('🔄 Starting Apollo Server...');
   await apolloServer.start();
-  console.log('✅ Apollo Server started');
-  
-  apolloServer.applyMiddleware({ 
-    app, 
+  logger.info('✅ Apollo Server started');
+
+  apolloServer.applyMiddleware({
+    app,
     path: '/graphql',
     cors: false // Already handled above
   });
-  console.log('✅ Apollo middleware applied to /graphql');
+  logger.info('✅ Apollo middleware applied to /graphql');
 }
 
 // WebSocket setup for real-time updates (e.g., live fact-check results)
@@ -236,16 +248,16 @@ const io = new Server(httpServer, {
 });
 
 io.on('connection', (socket) => {
-  console.log(`🔌 WebSocket connected: ${socket.id}`);
-  
+  logger.info(`🔌 WebSocket connected: ${socket.id}`);
+
   // Example: Subscribe to fact-check updates
   socket.on('subscribe:factchecks', (category) => {
     socket.join(`factchecks:${category}`);
-    console.log(`User subscribed to fact-checks: ${category}`);
+    logger.info(`User subscribed to fact-checks: ${category}`);
   });
-  
+
   socket.on('disconnect', () => {
-    console.log(`🔌 WebSocket disconnected: ${socket.id}`);
+    logger.info(`🔌 WebSocket disconnected: ${socket.id}`);
   });
 });
 
@@ -259,11 +271,11 @@ global.broadcastFactCheck = broadcastFactCheck;
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  logger.info('SIGTERM received, shutting down gracefully...');
   await jobManager.close(); // Close job queues first
   await pool.end();
   httpServer.close(() => {
-    console.log('Server closed');
+    logger.info('Server closed');
     process.exit(0);
   });
 });
@@ -284,18 +296,18 @@ startApolloServer().then(() => {
 
   // Global error handler
   app.use((err, req, res, next) => {
-    console.error('Unhandled error:', err);
+    logger.error('Unhandled error:', err);
     if (SENTRY_DSN) {
       Sentry.captureException(err);
     }
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal server error',
       message: NODE_ENV === 'development' ? err.message : undefined
     });
   });
 
   httpServer.listen(PORT, () => {
-    console.log(`
+    logger.info(`
 🚀 AppWhistler Server Ready!
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📍 REST API:    http://localhost:${PORT}/api/v1
@@ -307,7 +319,7 @@ Environment: ${NODE_ENV}
     `);
   });
 }).catch(error => {
-  console.error('Failed to start server:', error);
+  logger.error('Failed to start server:', error);
   process.exit(1);
 });
 

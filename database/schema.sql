@@ -103,3 +103,64 @@ CREATE INDEX IF NOT EXISTS idx_reviews_created_at ON reviews(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_fact_checks_category ON fact_checks(category);
 CREATE INDEX IF NOT EXISTS idx_fact_checks_verdict ON fact_checks(verdict);
 CREATE INDEX IF NOT EXISTS idx_fact_checks_created_at ON fact_checks(created_at DESC);
+
+-- ============================================================================
+-- PERFORMANCE INDEXES FOR COMPLEX QUERIES
+-- ============================================================================
+-- These composite and specialized indexes optimize common query patterns
+-- identified in the GraphQL resolvers and prevent full table scans.
+
+-- Composite index for filtered app queries (category + platform + rating sort)
+-- Optimizes: queries filtering by category and platform, sorted by truth_rating
+-- Used in: trendingApps, searchApps with category/platform filters
+CREATE INDEX IF NOT EXISTS idx_apps_category_platform_rating
+  ON apps(category, platform, truth_rating DESC);
+
+-- Composite index for verified app listings sorted by popularity
+-- Optimizes: queries for verified apps on specific platforms, sorted by downloads
+-- Used in: verified app queries, trending verified apps by platform
+CREATE INDEX IF NOT EXISTS idx_apps_platform_verified_downloads
+  ON apps(platform, is_verified, download_count DESC);
+
+-- Partial index for verified apps only
+-- Optimizes: queries that only need verified apps (WHERE is_verified = true)
+-- Reduces index size by excluding non-verified apps (partial index)
+-- Used in: verifiedApps query, fact-check verification lists
+CREATE INDEX IF NOT EXISTS idx_apps_verified
+  ON apps(is_verified) WHERE is_verified = true;
+
+-- Index for role-based queries
+-- Optimizes: admin/moderator queries, permission checks
+-- Used in: user management, role-based filtering, authorization checks
+CREATE INDEX IF NOT EXISTS idx_users_role
+  ON users(role);
+
+-- Composite index for review aggregations
+-- Optimizes: calculating average ratings per app with rating distribution
+-- Used in: app detail pages showing review statistics, rating filters
+CREATE INDEX IF NOT EXISTS idx_reviews_app_rating
+  ON reviews(app_id, rating);
+
+-- Composite index for fact-check filtering and sorting
+-- Optimizes: filtering fact-checks by category and verdict, sorted by date
+-- Used in: fact-check feeds, category-specific fact-check lists
+CREATE INDEX IF NOT EXISTS idx_fact_checks_category_verdict_created
+  ON fact_checks(category, verdict, created_at DESC);
+
+-- ============================================================================
+-- FULL-TEXT SEARCH INDEXES (PostgreSQL GIN indexes)
+-- ============================================================================
+-- GIN (Generalized Inverted Index) indexes for efficient text search
+-- Note: These use PostgreSQL-specific features and won't work with SQLite
+
+-- Full-text search on app names
+-- Optimizes: text search queries on app names using to_tsvector
+-- Used in: searchApps query with text matching on name field
+CREATE INDEX IF NOT EXISTS idx_apps_search_name
+  ON apps USING gin(to_tsvector('english', name));
+
+-- Full-text search on app descriptions
+-- Optimizes: text search queries on app descriptions using to_tsvector
+-- Used in: searchApps query with text matching on description field
+CREATE INDEX IF NOT EXISTS idx_apps_search_description
+  ON apps USING gin(to_tsvector('english', description));
