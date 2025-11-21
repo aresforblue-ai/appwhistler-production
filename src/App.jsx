@@ -173,6 +173,86 @@ function App() {
           )}
         </section>
 
+        {/* Coming Soon - Sister Apps Section */}
+        <section className="max-w-7xl mx-auto px-6 py-20">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-display font-black mb-4 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-500 bg-clip-text text-transparent tracking-tight">
+              More Truth Platforms
+            </h2>
+            <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium">
+              Expanding our mission to bring transparency across all digital spaces
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {/* GovWhistler Card */}
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/90 to-white/70 dark:from-slate-800/90 dark:to-slate-900/70 backdrop-blur-xl border-2 border-slate-200 dark:border-slate-700 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 hover:-translate-y-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-green-500/5 to-transparent dark:from-emerald-500/20 dark:via-green-500/10"></div>
+
+              <div className="relative p-8 flex flex-col items-center">
+                {/* Badge Image Placeholder */}
+                <div className="w-32 h-32 mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-2xl shadow-emerald-500/50 group-hover:shadow-emerald-500/70 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  <span className="text-6xl">🏛️</span>
+                </div>
+
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">GovWhistler</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-6 leading-relaxed">
+                  Truth-verified government transparency platform for informed civic engagement
+                </p>
+
+                {/* Coming Soon Badge */}
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-green-600 text-white font-bold text-sm shadow-lg animate-pulse">
+                  <span className="text-lg">⏳</span>
+                  Coming Soon
+                </div>
+
+                {/* Decorative Corner Badge */}
+                <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-emerald-500/20 dark:bg-emerald-500/30 flex items-center justify-center backdrop-blur-sm border border-emerald-500/30">
+                  <span className="text-2xl">🎯</span>
+                </div>
+              </div>
+            </div>
+
+            {/* NewsWhistler Card */}
+            <div className="group relative overflow-hidden rounded-3xl bg-gradient-to-br from-white/90 to-white/70 dark:from-slate-800/90 dark:to-slate-900/70 backdrop-blur-xl border-2 border-slate-200 dark:border-slate-700 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:scale-105 hover:-translate-y-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-transparent dark:from-orange-500/20 dark:via-amber-500/10"></div>
+
+              <div className="relative p-8 flex flex-col items-center">
+                {/* Badge Image Placeholder */}
+                <div className="w-32 h-32 mb-6 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-2xl shadow-orange-500/50 group-hover:shadow-orange-500/70 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3">
+                  <span className="text-6xl">📰</span>
+                </div>
+
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">NewsWhistler</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 text-center mb-6 leading-relaxed">
+                  AI-powered news fact-checking to combat misinformation at the source
+                </p>
+
+                {/* Coming Soon Badge */}
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold text-sm shadow-lg animate-pulse">
+                  <span className="text-lg">⏳</span>
+                  Coming Soon
+                </div>
+
+                {/* Decorative Corner Badge */}
+                <div className="absolute top-4 right-4 w-12 h-12 rounded-full bg-orange-500/20 dark:bg-orange-500/30 flex items-center justify-center backdrop-blur-sm border border-orange-500/30">
+                  <span className="text-2xl">⚡</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Call to Action */}
+          <div className="text-center mt-12">
+            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium mb-4">
+              Want to be notified when they launch?
+            </p>
+            <button className="px-8 py-4 rounded-xl bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 text-white font-bold hover:scale-105 transition-all duration-300 shadow-2xl hover:shadow-purple-500/50">
+              Join Waitlist
+            </button>
+          </div>
+        </section>
+
         <footer className="border-t-2 border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl mt-24 shadow-2xl">
           <div className="max-w-7xl mx-auto px-6 py-8 text-center">
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-2 font-medium">Built with ❤️ to combat disinformation</p>
