@@ -1,7 +1,7 @@
 // src/backend/utils/envValidator.js
 // Validate environment configuration on startup
 
-const { loadSecrets, getSecret } = require('../../config/secrets');
+const { loadSecrets, getSecret } = require('../config-secrets.cjs');
 const path = require('path');
 
 loadSecrets();

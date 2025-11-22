@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
-const { loadSecrets, getSecret } = require('../config/secrets');
-const { initializeDatabase } = require('../database/init');
+const { loadSecrets, getSecret } = require('./config-secrets.cjs');
+const { initializeDatabase } = require('../database/init.cjs');
 
 const app = express();
 app.use(cors({ origin: ['http://localhost:3000'], credentials: true }));

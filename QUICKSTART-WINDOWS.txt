@@ -1,0 +1,109 @@
+APPWHISTLER - WINDOWS 11 QUICK START GUIDE
+============================================
+
+PREREQUISITES
+=============
+1. Node.js (download from https://nodejs.org/ - get LTS version)
+2. Nothing else needed - database runs locally!
+
+STEP 1: INSTALL NODE.JS
+=======================
+1. Visit https://nodejs.org/
+2. Download LTS version (e.g., v18.x or newer)
+3. Run the installer, click Next through everything
+4. IMPORTANT: Check "Automatically install necessary tools"
+5. Click Finish, then RESTART YOUR COMPUTER
+6. Open Command Prompt (cmd) or PowerShell
+7. Test: Type "node --version" and "npm --version"
+   Both should show version numbers (not "command not found")
+
+STEP 2: EXTRACT AND NAVIGATE
+=============================
+1. Extract appwhistler-production.zip to C:\appwhistler-production
+2. Open Command Prompt (cmd)
+3. Type: cd C:\appwhistler-production
+4. Press Enter
+
+STEP 3: ONE-COMMAND START
+==========================
+Type this command and press Enter:
+    start-appwhistler.bat
+
+This will:
+- Install packages automatically (if needed)
+- Open backend window (port 5000)
+- Open frontend window (port 3000)
+- Open your browser to http://localhost:3000
+
+STEP 4: VERIFY EVERYTHING WORKS
+================================
+Open a new Command Prompt and run:
+    cd C:\appwhistler-production
+    check-services.bat
+
+You should see green [OK] checks for all 7 items.
+
+STEP 5: ACCESS THE APP
+======================
+Open browser to: http://localhost:3000
+You should see AppWhistler with a list of apps!
+
+STOPPING THE APP
+================
+Run this command:
+    cd C:\appwhistler-production
+    stop-appwhistler.bat
+
+Or press Ctrl+C in each of the two server windows.
+
+TOP 3 COMMON ISSUES & FIXES
+============================
+
+ISSUE #1: "node: command not found"
+------------------------------------
+Cause: Node.js not installed or PATH not set
+
+Fix:
+1. Download Node.js from https://nodejs.org/
+2. Run installer, check "Add to PATH"
+3. RESTART your computer
+4. Open NEW Command Prompt window
+5. Type "node --version" - should show v18.x.x
+
+ISSUE #2: "Port 5000 already in use"
+-------------------------------------
+Cause: Another app is using that port
+
+Fix option A (easiest):
+1. Close any other apps using those ports
+2. Restart AppWhistler
+
+Fix option B:
+1. Run: netstat -ano | findstr :5000
+2. Note the PID (last column number)
+3. Run: taskkill /PID [number] /F
+4. Try starting again
+
+ISSUE #3: White screen in browser
+----------------------------------
+Cause: Backend server not running
+
+Fix:
+1. Check the backend window is open and shows no errors
+2. If not running, type: cd C:\appwhistler-production\backend
+3. Type: npm start
+4. Wait for message "✅ AppWhistler Server Ready!"
+5. Refresh browser (Ctrl+R)
+
+HELP & VERIFICATION
+===================
+- Frontend at: http://localhost:3000
+- Backend at: http://localhost:5000
+- GraphQL at: http://localhost:5000/graphql
+- Health check: http://localhost:5000/health
+
+Run "check-services.bat" anytime to see status of all systems.
+
+That's it! You're ready to use AppWhistler.
+
+Questions? Check WINDOWS-11-DEPLOYMENT.md for detailed instructions.

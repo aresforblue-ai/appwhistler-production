@@ -13,8 +13,8 @@ async function initializeDatabase() {
 
   // Try PostgreSQL
   try {
-    const { Pool } = require('pg');
-    const { getDatabaseConfig } = require('../config/secrets');
+    const { Pool } = require('../backend/node_modules/pg');
+    const { getDatabaseConfig } = require('../backend/config-secrets.cjs');
     
     const config = getDatabaseConfig();
     const pool = new Pool(config);
@@ -35,7 +35,7 @@ async function initializeDatabase() {
     
     // Fallback to SQLite
     try {
-      const sqlite3 = require('sqlite3').verbose();
+      const sqlite3 = require('../backend/node_modules/sqlite3').verbose();
       const dbPath = path.join(__dirname, 'appwhistler.db');
       
       const db = new sqlite3.Database(dbPath);
@@ -64,7 +64,7 @@ async function initializeDatabase() {
       }
       
       // Retry
-      const sqlite3 = require('sqlite3').verbose();
+      const sqlite3 = require('../backend/node_modules/sqlite3').verbose();
       const dbPath = path.join(__dirname, 'appwhistler.db');
       const db = new sqlite3.Database(dbPath);
       
@@ -96,7 +96,9 @@ async function runMigrations(client, type) {
       .replace(/JSONB/g, 'TEXT')
       .replace(/TEXT\[\]/g, 'TEXT') // Arrays as JSON strings
       .replace(/CURRENT_TIMESTAMP/g, 'DATETIME("now")')
-      .replace(/BOOLEAN/g, 'INTEGER');
+      .replace(/BOOLEAN/g, 'INTEGER')
+      // Remove PostgreSQL-specific GIN indexes (USING gin syntax)
+      .replace(/CREATE INDEX[^;]*USING gin[^;]*;/g, '-- PostgreSQL-specific GIN index removed for SQLite');
   }
   
   // Execute schema
@@ -158,6 +160,20 @@ async function seedDatabase(client, type) {
   }
   
   console.log('✅ Database seeded with demo data');
+}
+
+// Run initialization if called directly
+if (require.main === module) {
+  initializeDatabase()
+    .then(() => {
+      console.log('✅ Database initialization complete!');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('❌ Database initialization failed:', err.message);
+      console.error(err.stack);
+      process.exit(1);
+    });
 }
 
 module.exports = { initializeDatabase, dbClient, dbType };

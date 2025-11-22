@@ -2,7 +2,15 @@
 // Job handlers for background tasks
 
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
-const blockchain = require('../../blockchain/blockchain');
+
+// Lazy-load blockchain (optional dependency)
+let blockchain = null;
+try {
+  blockchain = require('../../blockchain/blockchain');
+} catch (error) {
+  console.warn('⚠️  Blockchain module not found. Blockchain features will be disabled.');
+  blockchain = { provider: null, signer: null };
+}
 
 /**
  * Handler for email jobs

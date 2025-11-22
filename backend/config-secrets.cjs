@@ -2,7 +2,8 @@
 // Enterprise Secrets Management - AWS-Ready Architecture
 // Currently uses .env, easily upgrades to AWS Secrets Manager
 
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 // Secret cache (prevents repeated AWS API calls in production)
 const secretCache = new Map();
@@ -83,6 +84,20 @@ function getSecret(key, defaultValue = null) {
   }
   
   return cached.data[key] !== undefined ? cached.data[key] : defaultValue;
+}
+
+/**
+ * Get a secret value and throw if not found or empty
+ * @param {string} key - Secret key
+ * @returns {string} Secret value
+ * @throws {Error} If secret is missing or empty
+ */
+function requireSecret(key) {
+  const value = getSecret(key);
+  if (value === null || value === undefined || value === '') {
+    throw new Error(`Missing required secret: ${key}`);
+  }
+  return value;
 }
 
 /**
@@ -167,6 +182,7 @@ function validateSecrets() {
 module.exports = {
   loadSecrets,
   getSecret,
+  requireSecret,
   getNumber,
   getBoolean,
   getArray,

@@ -1,7 +1,7 @@
 // src/backend/queues/jobManager.js
 // Background job queue management using Bull/BullMQ with fallback to inline execution
 
-const { getSecret } = require('../../config/secrets');
+const { getSecret } = require('../config-secrets.cjs');
 
 class JobManager {
   constructor() {

@@ -1,8 +1,7 @@
 // src/backend/utils/email.js
 // Production-ready email service using SendGrid with HTML templates
 
-const sgMail = require('@sendgrid/mail');
-const { getSecret } = require('../../config/secrets');
+const { getSecret } = require('../config-secrets.cjs');
 
 // Configuration
 const SENDGRID_API_KEY = getSecret('SENDGRID_API_KEY');
@@ -11,9 +10,18 @@ const FROM_NAME = getSecret('FROM_NAME', 'AppWhistler');
 const PASSWORD_RESET_BASE_URL = getSecret('PASSWORD_RESET_BASE_URL', 'http://localhost:3000/reset-password');
 const APP_URL = getSecret('APP_URL', 'http://localhost:3000');
 
-// Initialize SendGrid
-if (SENDGRID_API_KEY && SENDGRID_API_KEY !== 'your_sendgrid_api_key') {
-  sgMail.setApiKey(SENDGRID_API_KEY);
+// Lazy-load SendGrid only when needed (optional dependency)
+let sgMail = null;
+function getSendGridClient() {
+  if (!sgMail && SENDGRID_API_KEY && SENDGRID_API_KEY !== 'your_sendgrid_api_key') {
+    try {
+      sgMail = require('@sendgrid/mail');
+      sgMail.setApiKey(SENDGRID_API_KEY);
+    } catch (error) {
+      console.warn('⚠️  @sendgrid/mail not installed. Email sending will use dev mode (console logging).');
+    }
+  }
+  return sgMail;
 }
 
 /**
@@ -260,8 +268,11 @@ function getAccountLockoutTemplate(username, lockoutDurationMinutes, unlockTime)
  * Send email via SendGrid
  */
 async function sendEmail(to, subject, htmlContent, textContent) {
-  // If SendGrid is not configured, log to console (development mode)
-  if (!SENDGRID_API_KEY || SENDGRID_API_KEY === 'your_sendgrid_api_key') {
+  // Get SendGrid client (lazy-loaded)
+  const client = getSendGridClient();
+
+  // If SendGrid is not configured or not available, log to console (development mode)
+  if (!client || !SENDGRID_API_KEY || SENDGRID_API_KEY === 'your_sendgrid_api_key') {
     console.log(`\n📧 [DEV MODE] Email would be sent to: ${to}`);
     console.log(`Subject: ${subject}`);
     console.log(`Text Content:\n${textContent || 'See HTML content'}\n`);
@@ -284,7 +295,7 @@ async function sendEmail(to, subject, htmlContent, textContent) {
       text: textContent || htmlContent.replace(/<[^>]*>/g, '') // Strip HTML for text version
     };
 
-    await sgMail.send(msg);
+    await client.send(msg);
     console.log(`✅ Email sent successfully to ${to}`);
     return {
       success: true,

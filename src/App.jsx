@@ -1,26 +1,23 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { useQuery } from '@apollo/client';
 import AppCardSkeleton from './components/AppCardSkeleton';
+import { GET_TRENDING_APPS } from './graphql/queries';
 
 // Lazy load AppCard component for code splitting
 const AppCard = lazy(() => import('./components/AppCard'));
-
-// Mock apps data with recognizable brands
-const MOCK_APPS = [
-  { id: 1, name: "Facebook", description: "Connect with friends and the world around you on Facebook", truthRating: 68, category: "social", isVerified: true, downloadCount: 2800000000, icon: "📘" },
-  { id: 2, name: "Google", description: "Search the world's information including webpages, images, videos and more", truthRating: 92, category: "research", isVerified: true, downloadCount: 5000000000, icon: "🔍" },
-  { id: 3, name: "Twitter", description: "Join the conversation and see what's happening in the world right now", truthRating: 64, category: "news", isVerified: true, downloadCount: 450000000, icon: "🐦" },
-  { id: 4, name: "LinkedIn", description: "Connect with professionals, find jobs, and grow your career", truthRating: 88, category: "social", isVerified: true, downloadCount: 930000000, icon: "💼" },
-  { id: 5, name: "WhatsApp", description: "Simple, reliable, private messaging and calling for free", truthRating: 85, category: "social", isVerified: true, downloadCount: 2000000000, icon: "💬" },
-  { id: 6, name: "Instagram", description: "Create and share photos, stories, and reels with friends", truthRating: 71, category: "social", isVerified: true, downloadCount: 2000000000, icon: "📷" }
-];
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const categories = ['all', 'news', 'research', 'verification', 'social', 'security'];
-  const [apps] = useState(MOCK_APPS);
-  const loading = false;
+
+  // Fetch apps from backend using GraphQL
+  const { data, loading, error } = useQuery(GET_TRENDING_APPS, {
+    variables: { limit: 50 }
+  });
+
+  const apps = data?.trendingApps || [];
 
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
@@ -140,7 +137,28 @@ function App() {
             </div>
           )}
 
-          {!loading && (
+          {error && (
+            <div className="text-center py-24">
+              <div className="text-8xl mb-6">⚠️</div>
+              <h3 className="text-3xl font-bold text-red-600 dark:text-red-400 mb-3">Connection Error</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                Unable to connect to AppWhistler backend. Make sure the server is running on port 5000.
+              </p>
+              <p className="text-sm text-slate-500 dark:text-slate-500 font-mono bg-slate-100 dark:bg-slate-800 p-4 rounded-lg inline-block">
+                {error.message}
+              </p>
+              <div className="mt-6">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-3 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-semibold shadow-lg hover:scale-105 transition-all"
+                >
+                  Retry
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!loading && !error && (
             <>
               <div className="text-center mb-8">
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">

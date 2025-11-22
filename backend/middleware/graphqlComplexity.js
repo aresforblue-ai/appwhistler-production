@@ -2,7 +2,7 @@
 // GraphQL query complexity and depth limiting to prevent DOS attacks
 
 const { GraphQLError } = require('graphql');
-const { getNumber } = require('../../config/secrets');
+const { getNumber } = require('../config-secrets.cjs');
 
 // Configuration
 const MAX_DEPTH = getNumber('GRAPHQL_MAX_DEPTH', 10);
