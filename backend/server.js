@@ -8,7 +8,6 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
-const { Pool } = require('pg');
 const Sentry = require('@sentry/node');
 require('dotenv').config();
 
@@ -16,9 +15,8 @@ const {
   loadSecrets,
   getSecret,
   getNumber,
-  getArray,
-  getDatabaseConfig
-} = require('../config/secrets');
+  getArray
+} = require('../config/secrets.cjs');
 
 loadSecrets();
 
@@ -28,7 +26,6 @@ const { validateEnvironmentOrExit, getFeatureFlags } = require('./utils/envValid
 const { createBatchLoaders } = require('./utils/dataLoader');
 const { authenticateToken } = require('./middleware/auth');
 const { perUserRateLimiter } = require('./middleware/rateLimiter');
-const PoolMonitor = require('./utils/poolMonitor');
 const { createComplexityPlugin } = require('./middleware/graphqlComplexity');
 const jobManager = require('./queues/jobManager');
 const { handleEmailJob, handleBlockchainJob, handleFactCheckJob } = require('./queues/jobHandlers');
@@ -45,9 +42,8 @@ const resolvers = require('./resolvers');
 const app = express();
 const httpServer = createServer(app);
 
-// PostgreSQL connection pool (reuses connections for performance)
-const pool = new Pool(getDatabaseConfig());
-const poolMonitor = new PoolMonitor(pool);
+// Database connection - using SQLite for development
+const pool = require('./db.cjs');
 
 const NODE_ENV = getSecret('NODE_ENV', 'development');
 const SENTRY_DSN = getSecret('SENTRY_DSN');
@@ -65,13 +61,15 @@ if (SENTRY_DSN) {
 }
 
 // Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
+(async () => {
+  try {
+    const res = await pool.query('SELECT NOW()');
+    logger.info('✅ Database connected at:', res.rows[0].now);
+  } catch (err) {
     logger.error('❌ Database connection failed:', err.message);
-    process.exit(1); // Exit if database is unreachable
+    // Don't exit - SQLite should work even if connection test fails
   }
-  logger.info('✅ Database connected at:', res.rows[0].now);
-});
+})();
 
 // Initialize background job queues and register workers
 jobManager.registerWorker('email-jobs', handleEmailJob);

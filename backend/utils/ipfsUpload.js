@@ -4,7 +4,7 @@
 const pinataSDK = require('@pinata/sdk');
 const sharp = require('sharp');
 const crypto = require('crypto');
-const { getSecret } = require('../../config/secrets');
+const { getSecret } = require('../../config/secrets.cjs');
 
 // Initialize Pinata client
 const PINATA_API_KEY = getSecret('PINATA_API_KEY');

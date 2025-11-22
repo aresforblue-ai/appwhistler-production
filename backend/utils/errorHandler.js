@@ -2,7 +2,7 @@
 // Standardized error handling and logging
 
 const { GraphQLError } = require('graphql');
-const { loadSecrets, getSecret } = require('../../config/secrets');
+const { loadSecrets, getSecret } = require('../../config/secrets.cjs');
 
 loadSecrets();
 

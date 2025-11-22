@@ -2,7 +2,10 @@
 // Enterprise Secrets Management - AWS-Ready Architecture
 // Currently uses .env, easily upgrades to AWS Secrets Manager
 
-require('dotenv').config();
+const path = require('path');
+
+// Load .env from the root directory (one level up from config/)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 // Secret cache (prevents repeated AWS API calls in production)
 const secretCache = new Map();
@@ -167,6 +170,7 @@ function validateSecrets() {
 module.exports = {
   loadSecrets,
   getSecret,
+  requireSecret: getSecret, // Alias for backward compatibility
   getNumber,
   getBoolean,
   getArray,
