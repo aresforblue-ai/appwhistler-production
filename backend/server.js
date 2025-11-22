@@ -80,6 +80,18 @@ jobManager.registerWorker('fact-check-jobs', handleFactCheckJob);
 
 logger.info('✅ Background job queues initialized');
 
+// Initialize AI agents system
+const { initializeAgents, shutdownAgents, agents, getAgentStatus } = require('./agents');
+
+(async () => {
+  try {
+    await initializeAgents();
+    logger.info('✅ All 20 AI agents initialized successfully');
+  } catch (error) {
+    logger.error('❌ Failed to initialize agents:', error.message);
+  }
+})();
+
 // Middleware: Security headers (protects against common attacks)
 const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [
   'http://localhost:3000',

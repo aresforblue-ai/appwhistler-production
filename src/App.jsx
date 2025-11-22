@@ -1,26 +1,47 @@
 import { useState, useEffect, lazy, Suspense } from 'react';
+import { useQuery, useSubscription } from '@apollo/client';
 import AppCardSkeleton from './components/AppCardSkeleton';
+import { GET_TRENDING_APPS, SEARCH_APPS, FACT_CHECK_ADDED } from './graphql/queries';
 
 // Lazy load AppCard component for code splitting
 const AppCard = lazy(() => import('./components/AppCard'));
-
-// Mock apps data with recognizable brands
-const MOCK_APPS = [
-  { id: 1, name: "Facebook", description: "Connect with friends and the world around you on Facebook", truthRating: 68, category: "social", isVerified: true, downloadCount: 2800000000, icon: "📘" },
-  { id: 2, name: "Google", description: "Search the world's information including webpages, images, videos and more", truthRating: 92, category: "research", isVerified: true, downloadCount: 5000000000, icon: "🔍" },
-  { id: 3, name: "Twitter", description: "Join the conversation and see what's happening in the world right now", truthRating: 64, category: "news", isVerified: true, downloadCount: 450000000, icon: "🐦" },
-  { id: 4, name: "LinkedIn", description: "Connect with professionals, find jobs, and grow your career", truthRating: 88, category: "social", isVerified: true, downloadCount: 930000000, icon: "💼" },
-  { id: 5, name: "WhatsApp", description: "Simple, reliable, private messaging and calling for free", truthRating: 85, category: "social", isVerified: true, downloadCount: 2000000000, icon: "💬" },
-  { id: 6, name: "Instagram", description: "Create and share photos, stories, and reels with friends", truthRating: 71, category: "social", isVerified: true, downloadCount: 2000000000, icon: "📷" }
-];
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const categories = ['all', 'news', 'research', 'verification', 'social', 'security'];
-  const [apps] = useState(MOCK_APPS);
-  const loading = false;
+
+  // Fetch apps from GraphQL API (real-time data)
+  const { data, loading, error, refetch } = useQuery(
+    searchQuery || selectedCategory !== 'all' ? SEARCH_APPS : GET_TRENDING_APPS,
+    {
+      variables: searchQuery || selectedCategory !== 'all' ? {
+        search: searchQuery || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+        limit: 50,
+      } : {
+        limit: 50,
+      },
+      pollInterval: 30000, // Refresh every 30 seconds
+    }
+  );
+
+  // Subscribe to new fact-checks (real-time updates)
+  const { data: factCheckData } = useSubscription(FACT_CHECK_ADDED, {
+    variables: { category: selectedCategory !== 'all' ? selectedCategory : undefined },
+  });
+
+  // Show notification when new fact-check is added
+  useEffect(() => {
+    if (factCheckData?.factCheckAdded) {
+      console.log('New fact-check added:', factCheckData.factCheckAdded);
+      // Refetch apps to get updated data
+      refetch();
+    }
+  }, [factCheckData, refetch]);
+
+  const apps = data?.trendingApps || data?.apps?.edges || [];
 
   useEffect(() => {
     const saved = localStorage.getItem('darkMode');
@@ -37,23 +58,39 @@ function App() {
     document.documentElement.classList.toggle('dark');
   };
 
+  // Handle errors
+  if (error) {
+    console.error('GraphQL Error:', error);
+  }
+
   const filteredApps = apps.filter(app => {
-    const matchesSearch = app.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = app.name && app.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || app.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white via-30% to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 animate-gradient">
-        
-        <header className="sticky top-0 z-50 backdrop-blur-2xl bg-gradient-to-b from-white/70 via-white/50 to-transparent dark:from-slate-950/70 dark:via-slate-950/50 border-b border-white/30 dark:border-slate-700/30 shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-sky-100 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-950 dark:to-indigo-950 animate-gradient relative">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 dark:bg-purple-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-blob"></div>
+          <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 dark:bg-yellow-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 dark:bg-pink-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <header className="sticky top-0 z-50 backdrop-blur-2xl bg-gradient-to-b from-white/80 via-white/60 to-transparent dark:from-slate-900/90 dark:via-slate-900/70 border-b border-white/40 dark:border-slate-700/40 shadow-xl relative">
           <div className="max-w-7xl mx-auto px-6 py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 transition-all duration-300 hover:scale-110 hover:rotate-3">
-                  <span className="text-2xl animate-pulse">🛡️</span>
-                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center text-xs shadow-lg animate-bounce">✓</div>
+                <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 dark:from-sky-500 dark:via-blue-600 dark:to-indigo-700 flex items-center justify-center shadow-2xl shadow-blue-500/50 hover:shadow-blue-600/80 dark:shadow-blue-700/60 dark:hover:shadow-blue-600/80 transition-all duration-300 hover:scale-110 hover:rotate-6 group">
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/20 to-transparent"></div>
+                  <span className="text-3xl relative z-10 group-hover:scale-110 transition-transform">🛡️</span>
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center text-xs shadow-lg animate-bounce border-2 border-white dark:border-slate-900">
+                    <span className="text-white font-bold">✓</span>
+                  </div>
+                  {/* Pulse ring effect */}
+                  <div className="absolute inset-0 rounded-2xl bg-blue-500 opacity-0 group-hover:opacity-20 group-hover:scale-150 transition-all duration-500"></div>
                 </div>
                 <div>
                   <h1 className="text-xl font-display font-bold text-slate-800 dark:text-slate-100 tracking-tight">AppWhistler</h1>
