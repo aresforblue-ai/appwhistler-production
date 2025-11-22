@@ -45,102 +45,112 @@ function App() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-white dark:from-fog-950 dark:via-fog-900 dark:to-fog-800 dark:bg-gradient-to-br">
-        
-        <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-fog-900/80 shadow-sm">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+
+        <header className="sticky top-0 z-50 backdrop-blur-2xl bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/50 dark:border-slate-800/50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className="flex items-center justify-between h-16">
+            <div className="flex items-center justify-between h-20">
               {/* Logo Section */}
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <span className="text-4xl filter drop-shadow-md">🎵</span>
+              <div className="flex items-center gap-4">
+                <div className="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-700 shadow-lg shadow-blue-500/30">
+                  <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
                 </div>
                 <div>
-                  <h1 className="text-lg font-display font-bold text-fog-800 dark:text-fog-50 tracking-tight">AppWhistler</h1>
-                  <p className="text-[9px] text-fog-500 dark:text-fog-400 font-semibold tracking-wider uppercase">Truth-Verified</p>
+                  <h1 className="text-xl font-display font-black text-slate-900 dark:text-white tracking-tight">AppWhistler</h1>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-wider uppercase">Truth-Verified Apps</p>
                 </div>
               </div>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-2">
-                <button className="px-4 py-2 text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all">
+              <nav className="hidden md:flex items-center gap-1">
+                <button className="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 rounded-xl transition-all">
                   Explore
                 </button>
-                <button className="px-4 py-2 text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all">
+                <button className="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 rounded-xl transition-all">
                   Leaderboard
                 </button>
-                <button className="px-4 py-2 text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all">
-                  Submit App
-                </button>
-                <button className="px-4 py-2 text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all">
-                  About
+                <button className="px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 rounded-xl transition-all">
+                  Submit
                 </button>
               </nav>
 
               {/* Right Actions */}
-              <div className="flex items-center gap-2">
-                <button onClick={toggleDarkMode} className="p-2.5 rounded-lg bg-fog-100 dark:bg-fog-800 hover:bg-fog-200 dark:hover:bg-fog-700 transition-all duration-300 hover:scale-105 active:scale-95 touch-manipulation">
-                  <span className="text-xl">{darkMode ? '☀️' : '🌙'}</span>
+              <div className="flex items-center gap-3">
+                <button onClick={toggleDarkMode} className="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-300 hover:scale-105 active:scale-95 touch-manipulation">
+                  <span className="text-lg">{darkMode ? '☀️' : '🌙'}</span>
                 </button>
               </div>
             </div>
           </div>
         </header>
 
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="text-center mb-10 sm:mb-12">
-            <h2 className="text-4xl sm:text-5xl md:text-6xl font-display font-black mb-4 sm:mb-6 bg-gradient-to-r from-ice-600 via-ice-500 to-ice-400 bg-clip-text text-transparent tracking-tight leading-tight">
-              Truth-First Discovery
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-900 mb-6">
+              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <span className="text-xs font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide">Verified & Trusted</span>
+            </div>
+
+            <h2 className="text-5xl sm:text-6xl md:text-7xl font-display font-black mb-6 bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 dark:from-white dark:via-blue-200 dark:to-white bg-clip-text text-transparent tracking-tight leading-[1.1]">
+              Truth-First App<br />Discovery
             </h2>
-            <p className="text-lg sm:text-xl text-fog-600 dark:text-fog-300 max-w-2xl mx-auto mb-8 sm:mb-10 font-medium leading-relaxed px-4">
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed">
               AI-powered app recommendations with built-in fact-checking to combat disinformation
             </p>
 
-            <div className="flex items-center justify-center gap-6 sm:gap-10 mb-8 sm:mb-10">
-              <div className="text-center group cursor-pointer touch-manipulation">
-                <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-ice-600 to-ice-500 bg-clip-text text-transparent group-hover:scale-110 group-active:scale-95 transition-transform">{apps.length}</div>
-                <div className="text-[10px] sm:text-xs text-fog-500 dark:text-fog-400 font-bold uppercase tracking-wider">Verified</div>
+            <div className="flex items-center justify-center gap-8 sm:gap-12 mb-12">
+              <div className="text-center">
+                <div className="text-4xl sm:text-5xl font-black bg-gradient-to-br from-blue-600 to-cyan-500 bg-clip-text text-transparent">{apps.length}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">Verified Apps</div>
               </div>
-              <div className="w-px h-10 sm:h-12 bg-gradient-to-b from-transparent via-fog-300 dark:via-fog-700 to-transparent"></div>
-              <div className="text-center group cursor-pointer touch-manipulation">
-                <div className="text-3xl sm:text-4xl font-black bg-gradient-to-r from-emerald-500 to-emerald-400 bg-clip-text text-transparent group-hover:scale-110 group-active:scale-95 transition-transform">50/50</div>
-                <div className="text-[10px] sm:text-xs text-fog-500 dark:text-fog-400 font-bold uppercase tracking-wider">DAO Split</div>
+              <div className="w-px h-14 bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent"></div>
+              <div className="text-center">
+                <div className="text-4xl sm:text-5xl font-black bg-gradient-to-br from-emerald-600 to-teal-500 bg-clip-text text-transparent">50/50</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">DAO Split</div>
               </div>
-              <div className="w-px h-10 sm:h-12 bg-gradient-to-b from-transparent via-fog-300 dark:via-fog-700 to-transparent"></div>
-              <div className="text-center group cursor-pointer touch-manipulation">
-                <div className="text-3xl sm:text-4xl animate-bounce">🤖</div>
-                <div className="text-[10px] sm:text-xs text-fog-500 dark:text-fog-400 font-bold uppercase tracking-wider">AI Powered</div>
+              <div className="w-px h-14 bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-700 to-transparent"></div>
+              <div className="text-center">
+                <div className="text-4xl sm:text-5xl">🤖</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">AI Powered</div>
               </div>
             </div>
           </div>
 
-          <div className="max-w-2xl mx-auto mb-8 sm:mb-10 px-4">
-            <div className="relative group">
+          <div className="max-w-2xl mx-auto mb-10 px-4">
+            <div className="relative">
+              <svg className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 type="text"
-                placeholder="Search truth-verified apps..."
+                placeholder="Search verified apps..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-4 pl-12 rounded-xl bg-white/95 dark:bg-fog-900/95 backdrop-blur-xl border-2 border-fog-200 dark:border-fog-700 focus:border-ice-500 dark:focus:border-ice-400 outline-none text-fog-800 dark:text-fog-100 placeholder-fog-400 text-base sm:text-lg font-medium shadow-lg transition-all duration-300 focus:shadow-xl focus:scale-[1.01] touch-manipulation"
+                className="w-full pl-14 pr-12 py-5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 focus:border-blue-500 dark:focus:border-blue-500 outline-none text-slate-900 dark:text-white placeholder-slate-400 text-lg font-medium shadow-xl shadow-slate-200/50 dark:shadow-slate-950/50 transition-all duration-300 focus:shadow-2xl focus:shadow-blue-500/20"
               />
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-xl sm:text-2xl group-focus-within:scale-110 transition-transform">🔍</div>
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 transform -translate-y-1/2 text-fog-400 hover:text-fog-600 dark:hover:text-fog-300 text-lg sm:text-xl font-bold hover:scale-110 active:scale-95 transition-all touch-manipulation">
-                  ✕
+                <button onClick={() => setSearchQuery('')} className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">
+                  <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               )}
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-center gap-2 sm:gap-3 mb-10 sm:mb-12 px-4">
+          <div className="flex flex-wrap justify-center gap-3 mb-12 px-4">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 touch-manipulation active:scale-95 ${
+                className={`px-6 py-3 rounded-full text-sm font-bold transition-all duration-300 touch-manipulation ${
                   selectedCategory === cat
-                    ? 'bg-gradient-to-r from-ice-500 to-ice-600 text-white shadow-lg shadow-ice-500/30 scale-105'
-                    : 'bg-white/95 dark:bg-fog-800/95 text-fog-600 dark:text-fog-300 border-2 border-fog-200 dark:border-fog-700 hover:border-ice-400 dark:hover:border-ice-500 hover:scale-105 backdrop-blur-sm'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/30'
+                    : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-lg'
                 }`}
               >
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -193,10 +203,18 @@ function App() {
           )}
         </section>
 
-        <footer className="border-t border-fog-200 dark:border-fog-800 bg-white/60 dark:bg-fog-900/60 backdrop-blur-xl mt-16 sm:mt-24 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 text-center">
-            <p className="text-sm text-fog-600 dark:text-fog-400 mb-2 font-medium">Built with ❤️ to combat disinformation</p>
-            <p className="text-xs text-fog-500 dark:text-fog-500 font-semibold">Powered by Grok AI • Truth DAO • Ethereum</p>
+        <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl mt-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 text-center">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-lg font-display font-black text-slate-900 dark:text-white">AppWhistler</span>
+            </div>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">Built with ❤️ to combat disinformation</p>
+            <p className="text-xs text-slate-500 dark:text-slate-500 font-semibold">Powered by Grok AI • Truth DAO • Ethereum</p>
           </div>
         </footer>
       </div>
