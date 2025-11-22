@@ -204,14 +204,15 @@ function validateEnvironment() {
     errors.push('NODE_ENV must be one of: development, staging, production');
   }
 
-  // Validate URLs
+  // Validate URLs (only if they have a value)
   const urlVars = {
     'SUPABASE_URL': getValue('SUPABASE_URL'),
     'REDIS_URL': getValue('REDIS_URL')
   };
 
   for (const [varName, value] of Object.entries(urlVars)) {
-    if (value && !validators.isValidUrl(value)) {
+    // Skip validation if empty or undefined (these are optional)
+    if (value && value.trim() !== '' && !validators.isValidUrl(value)) {
       errors.push(`${varName} must be a valid URL (http://, https://, ws://, or wss://)`);
     }
   }
