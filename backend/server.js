@@ -45,9 +45,59 @@ const resolvers = require('./resolvers');
 const app = express();
 const httpServer = createServer(app);
 
-// PostgreSQL connection pool (reuses connections for performance)
-const pool = new Pool(getDatabaseConfig());
-const poolMonitor = new PoolMonitor(pool);
+// Database connection with SQLite fallback
+let pool;
+let poolMonitor;
+let dbInitialized = false;
+
+async function initializeDatabase() {
+  try {
+    // Try PostgreSQL first
+    const testPool = new Pool(getDatabaseConfig());
+    await testPool.query('SELECT NOW()');
+    pool = testPool;
+    poolMonitor = new PoolMonitor(pool);
+    logger.info('✅ Database connected: PostgreSQL');
+    dbInitialized = true;
+  } catch (pgError) {
+    logger.warn('⚠️  PostgreSQL not available:', pgError.message);
+    logger.info('🔄 Using SQLite fallback...');
+
+    // Initialize SQLite database
+    const { initializeDatabase: initDB } = require('../database/init.cjs');
+    const { client } = await initDB();
+
+    // Wrap SQLite for pool-like interface
+    pool = {
+      query: (text, params) => {
+        return new Promise((resolve, reject) => {
+          if (text.includes('$')) {
+            // Convert PostgreSQL parameterized queries to SQLite
+            let sqliteText = text;
+            if (params) {
+              params.forEach((param, i) => {
+                sqliteText = sqliteText.replace(`$${i + 1}`, '?');
+              });
+            }
+            client.all(sqliteText, params || [], (err, rows) => {
+              if (err) reject(err);
+              else resolve({ rows });
+            });
+          } else {
+            client.all(text, params || [], (err, rows) => {
+              if (err) reject(err);
+              else resolve({ rows });
+            });
+          }
+        });
+      },
+      end: () => client.close()
+    };
+    poolMonitor = { getMetrics: () => ({ total: 1, idle: 0, waiting: 0 }) };
+    logger.info('✅ Database connected: SQLite');
+    dbInitialized = true;
+  }
+}
 
 const NODE_ENV = getSecret('NODE_ENV', 'development');
 const SENTRY_DSN = getSecret('SENTRY_DSN');
@@ -63,15 +113,6 @@ if (SENTRY_DSN) {
   app.use(Sentry.Handlers.requestHandler());
   app.use(Sentry.Handlers.tracingHandler());
 }
-
-// Test database connection
-pool.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    logger.error('❌ Database connection failed:', err.message);
-    process.exit(1); // Exit if database is unreachable
-  }
-  logger.info('✅ Database connected at:', res.rows[0].now);
-});
 
 // Initialize background job queues and register workers
 jobManager.registerWorker('email-jobs', handleEmailJob);
@@ -280,10 +321,16 @@ process.on('SIGTERM', async () => {
   });
 });
 
-// Start the server
+// Start the server - WAIT for database initialization
 const PORT = getNumber('PORT', 5000);
 
-startApolloServer().then(() => {
+async function startServer() {
+  // Wait for database to be ready
+  await initializeDatabase();
+
+  // Then start Apollo server
+  await startApolloServer();
+
   // Add error handlers AFTER Apollo middleware is mounted
   if (SENTRY_DSN) {
     app.use(Sentry.Handlers.errorHandler());
@@ -318,7 +365,9 @@ startApolloServer().then(() => {
 Environment: ${NODE_ENV}
     `);
   });
-}).catch(error => {
+}
+
+startServer().catch(error => {
   logger.error('Failed to start server:', error);
   process.exit(1);
 });
