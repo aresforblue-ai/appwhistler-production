@@ -53,14 +53,11 @@ function App() {
             <div className="flex items-center justify-between h-16">
               {/* Logo Section */}
               <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-ice-400 via-ice-500 to-ice-600 flex items-center justify-center shadow-lg shadow-ice-500/30 hover:shadow-ice-500/50 transition-all duration-300 hover:scale-105">
-                  <span className="text-xl">🛡️</span>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-emerald-400 rounded-full flex items-center justify-center text-[8px] shadow-md">✓</div>
-                </div>
-                <div>
-                  <h1 className="text-lg font-display font-bold text-fog-800 dark:text-fog-50 tracking-tight">AppWhistler</h1>
-                  <p className="text-[9px] text-fog-500 dark:text-fog-400 font-semibold tracking-wider uppercase">Truth-Verified</p>
-                </div>
+                <img
+                  src="/logo.png"
+                  alt="AppWhistler Logo"
+                  className="h-10 w-auto hover:scale-105 transition-all duration-300 touch-manipulation"
+                />
               </div>
 
               {/* Desktop Navigation */}
