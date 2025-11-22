@@ -112,6 +112,19 @@ function getArray(key, separator = ',', defaultValue = []) {
 }
 
 /**
+ * Require a secret value (throws error if not found)
+ * @param {string} key - Secret key
+ * @throws {Error} If secret is not found
+ */
+function requireSecret(key) {
+  const value = getSecret(key);
+  if (!value) {
+    throw new Error(`Required secret '${key}' is not defined in environment variables`);
+  }
+  return value;
+}
+
+/**
  * Get database configuration object
  */
 function getDatabaseConfig() {
@@ -170,6 +183,7 @@ module.exports = {
   getNumber,
   getBoolean,
   getArray,
+  requireSecret,
   getDatabaseConfig,
   validateSecrets,
 };

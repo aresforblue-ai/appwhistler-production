@@ -47,13 +47,18 @@ CREATE TABLE IF NOT EXISTS users (
   
   -- Profile
   avatar_url TEXT,
+  avatar_thumbnail_url TEXT,
+  avatar_ipfs_hash VARCHAR(255),
+  avatar_uploaded_at TIMESTAMP,
   bio TEXT,
-  
+  social_links TEXT,
+
   -- Settings (JSON for flexibility)
   preferences JSONB,
-  
+
   -- Timestamps
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   last_login TIMESTAMP
 );
 
@@ -78,11 +83,105 @@ CREATE TABLE IF NOT EXISTS fact_checks (
   verdict VARCHAR(50) NOT NULL, -- 'true', 'false', 'misleading', 'unverified'
   confidence_score INTEGER CHECK (confidence_score >= 0 AND confidence_score <= 100),
   evidence TEXT,
+  explanation TEXT,
   sources TEXT[], -- Array of source URLs
   category VARCHAR(100),
+  image_url TEXT,
   checked_by_user_id INTEGER REFERENCES users(id),
+  submitted_by INTEGER REFERENCES users(id),
+  verified_by INTEGER REFERENCES users(id),
   blockchain_proof_hash VARCHAR(255),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Fact check votes table - User votes on fact checks
+CREATE TABLE IF NOT EXISTS fact_check_votes (
+  id SERIAL PRIMARY KEY,
+  fact_check_id INTEGER NOT NULL REFERENCES fact_checks(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  vote_type VARCHAR(20) NOT NULL CHECK (vote_type IN ('agree', 'disagree', 'unsure')),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(fact_check_id, user_id) -- One vote per user per fact check
+);
+
+-- Fact check appeals table - Appeals for disputed fact checks
+CREATE TABLE IF NOT EXISTS fact_check_appeals (
+  id SERIAL PRIMARY KEY,
+  fact_check_id INTEGER NOT NULL REFERENCES fact_checks(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+  reviewed_by INTEGER REFERENCES users(id),
+  reviewed_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Bounties table - Rewards for fact-checking contributions
+CREATE TABLE IF NOT EXISTS bounties (
+  id SERIAL PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  reward_amount DECIMAL(18, 8) NOT NULL, -- Crypto amount
+  currency VARCHAR(20) DEFAULT 'ETH',
+  creator_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  claim_id TEXT, -- Claim to be fact-checked
+  winner_id INTEGER REFERENCES users(id),
+  status VARCHAR(50) DEFAULT 'open', -- 'open', 'claimed', 'completed', 'cancelled'
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP
+);
+
+-- Blockchain transactions table - Blockchain verification records
+CREATE TABLE IF NOT EXISTS blockchain_transactions (
+  id SERIAL PRIMARY KEY,
+  transaction_hash VARCHAR(255) UNIQUE NOT NULL,
+  blockchain VARCHAR(50) NOT NULL, -- 'ethereum', 'polygon', etc.
+  transaction_type VARCHAR(50) NOT NULL, -- 'verification', 'bounty_payment', etc.
+  from_address VARCHAR(255),
+  to_address VARCHAR(255),
+  amount DECIMAL(18, 8),
+  gas_used BIGINT,
+  block_number BIGINT,
+  status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'confirmed', 'failed'
+  metadata JSONB, -- Additional transaction data
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  confirmed_at TIMESTAMP
+);
+
+-- Activity log table - User activity tracking
+CREATE TABLE IF NOT EXISTS activity_log (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  activity_type VARCHAR(100) NOT NULL, -- 'login', 'fact_check_submitted', 'review_created', etc.
+  description TEXT,
+  ip_address VARCHAR(45), -- IPv4 or IPv6
+  user_agent TEXT,
+  metadata JSONB, -- Additional activity data
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Password reset requests table - Password reset token management
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token VARCHAR(255) UNIQUE NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  consumed_at TIMESTAMP,
+  ip_address VARCHAR(45),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Recommendations table - Personalized app recommendations
+CREATE TABLE IF NOT EXISTS recommendations (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  app_id INTEGER NOT NULL REFERENCES apps(id) ON DELETE CASCADE,
+  score DECIMAL(5, 2) NOT NULL, -- Recommendation confidence score
+  reason TEXT, -- Why this app is recommended
+  algorithm VARCHAR(100), -- Recommendation algorithm used
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, app_id) -- One recommendation per user per app
 );
 
 -- Create indexes for performance
@@ -164,3 +263,42 @@ CREATE INDEX IF NOT EXISTS idx_apps_search_name
 -- Used in: searchApps query with text matching on description field
 CREATE INDEX IF NOT EXISTS idx_apps_search_description
   ON apps USING gin(to_tsvector('english', description));
+
+-- ============================================================================
+-- INDEXES FOR NEW TABLES
+-- ============================================================================
+
+-- Fact check votes indexes
+CREATE INDEX IF NOT EXISTS idx_fact_check_votes_fact_check ON fact_check_votes(fact_check_id);
+CREATE INDEX IF NOT EXISTS idx_fact_check_votes_user ON fact_check_votes(user_id);
+
+-- Fact check appeals indexes
+CREATE INDEX IF NOT EXISTS idx_fact_check_appeals_fact_check ON fact_check_appeals(fact_check_id);
+CREATE INDEX IF NOT EXISTS idx_fact_check_appeals_user ON fact_check_appeals(user_id);
+CREATE INDEX IF NOT EXISTS idx_fact_check_appeals_status ON fact_check_appeals(status);
+
+-- Bounties indexes
+CREATE INDEX IF NOT EXISTS idx_bounties_creator ON bounties(creator_id);
+CREATE INDEX IF NOT EXISTS idx_bounties_winner ON bounties(winner_id);
+CREATE INDEX IF NOT EXISTS idx_bounties_status ON bounties(status);
+CREATE INDEX IF NOT EXISTS idx_bounties_created_at ON bounties(created_at DESC);
+
+-- Blockchain transactions indexes
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_hash ON blockchain_transactions(transaction_hash);
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_status ON blockchain_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_blockchain_transactions_type ON blockchain_transactions(transaction_type);
+
+-- Activity log indexes
+CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_activity_log_type ON activity_log(activity_type);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC);
+
+-- Password reset requests indexes
+CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON password_reset_requests(token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_expires ON password_reset_requests(expires_at);
+
+-- Recommendations indexes
+CREATE INDEX IF NOT EXISTS idx_recommendations_user ON recommendations(user_id);
+CREATE INDEX IF NOT EXISTS idx_recommendations_app ON recommendations(app_id);
+CREATE INDEX IF NOT EXISTS idx_recommendations_score ON recommendations(score DESC);

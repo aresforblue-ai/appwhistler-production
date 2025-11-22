@@ -161,3 +161,16 @@ async function seedDatabase(client, type) {
 }
 
 module.exports = { initializeDatabase, dbClient, dbType };
+
+// Run initialization if executed directly
+if (require.main === module) {
+  initializeDatabase()
+    .then(() => {
+      console.log('✅ Database initialization complete!');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error('❌ Database initialization failed:', error);
+      process.exit(1);
+    });
+}
