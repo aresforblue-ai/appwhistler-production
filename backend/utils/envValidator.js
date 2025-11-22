@@ -23,7 +23,7 @@ const validators = {
   isValidUrl: (url) => {
     try {
       const parsed = new URL(url);
-      return ['http:', 'https:', 'ws:', 'wss:'].includes(parsed.protocol);
+      return ['http:', 'https:', 'ws:', 'wss:', 'redis:'].includes(parsed.protocol);
     } catch {
       return false;
     }

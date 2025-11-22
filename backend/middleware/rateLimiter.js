@@ -46,11 +46,14 @@ const perUserRateLimiter = rateLimit({
   legacyHeaders: false,
   message: 'Too many requests, please try again later.',
   skip: (req) => isWhitelisted(req),
-  keyGenerator: (req) => {
+  keyGenerator: (req, res) => {
+    // Use user ID for authenticated requests
     if (req.user?.userId) {
       return `user:${req.user.userId}`;
     }
-    return `ip:${req.ip}`;
+    // For anonymous requests, use the built-in IP key generator
+    // which properly handles IPv6 addresses
+    return rateLimit.ipKeyGenerator(req, res);
   },
   max: (req, res) => resolveLimit(req),
   handler: (req, res, next, options) => {
