@@ -54,9 +54,9 @@ function AppCard({ app }) {
         </div>
       </div>
 
-      <button className="w-full mt-5 py-3 sm:py-3.5 bg-gradient-to-r from-ice-500 to-ice-600 text-white rounded-xl text-sm font-black hover:scale-[1.02] active:scale-[1.01] hover:shadow-lg transition-all duration-300 shadow-md touch-manipulation">
+      <div className="w-full mt-5 py-3 sm:py-3.5 bg-gradient-to-r from-ice-500 to-ice-600 text-white rounded-xl text-sm font-black text-center shadow-md opacity-50 cursor-not-allowed">
         View Details →
-      </button>
+      </div>
     </div>
   );
 }

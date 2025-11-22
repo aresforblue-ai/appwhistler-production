@@ -18,7 +18,6 @@ function App() {
   const [darkMode, setDarkMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const categories = ['all', 'news', 'research', 'verification', 'social', 'security'];
   const [apps] = useState(MOCK_APPS);
   const loading = false;
@@ -46,18 +45,20 @@ function App() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
-      <div className="min-h-screen bg-gradient-to-br from-ice-50 via-white via-40% to-fog-100 dark:from-fog-950 dark:via-fog-900 dark:to-fog-800 animate-gradient">
+      <div className="min-h-screen bg-white dark:from-fog-950 dark:via-fog-900 dark:to-fog-800 dark:bg-gradient-to-br">
         
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 dark:bg-fog-900/80 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-16">
               {/* Logo Section */}
               <div className="flex items-center gap-3">
-                <img
-                  src="/logo.png"
-                  alt="AppWhistler Logo"
-                  className="h-10 w-auto hover:scale-105 transition-all duration-300 touch-manipulation"
-                />
+                <div className="relative">
+                  <span className="text-4xl filter drop-shadow-md">🎵</span>
+                </div>
+                <div>
+                  <h1 className="text-lg font-display font-bold text-fog-800 dark:text-fog-50 tracking-tight">AppWhistler</h1>
+                  <p className="text-[9px] text-fog-500 dark:text-fog-400 font-semibold tracking-wider uppercase">Truth-Verified</p>
+                </div>
               </div>
 
               {/* Desktop Navigation */}
@@ -81,40 +82,8 @@ function App() {
                 <button onClick={toggleDarkMode} className="p-2.5 rounded-lg bg-fog-100 dark:bg-fog-800 hover:bg-fog-200 dark:hover:bg-fog-700 transition-all duration-300 hover:scale-105 active:scale-95 touch-manipulation">
                   <span className="text-xl">{darkMode ? '☀️' : '🌙'}</span>
                 </button>
-
-                {/* Mobile Menu Button */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden p-2.5 rounded-lg bg-fog-100 dark:bg-fog-800 hover:bg-fog-200 dark:hover:bg-fog-700 transition-all touch-manipulation active:scale-95"
-                >
-                  <span className="text-xl">{mobileMenuOpen ? '✕' : '☰'}</span>
-                </button>
               </div>
             </div>
-
-            {/* Mobile Navigation Menu */}
-            {mobileMenuOpen && (
-              <div className="md:hidden py-4 border-t border-fog-200 dark:border-fog-700 bg-white/95 dark:bg-fog-900/95 backdrop-blur-xl">
-                <nav className="flex flex-col gap-2">
-                  <button className="px-4 py-3 text-left text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all active:scale-98 touch-manipulation">
-                    Explore Apps
-                  </button>
-                  <button className="px-4 py-3 text-left text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all active:scale-98 touch-manipulation">
-                    Leaderboard
-                  </button>
-                  <button className="px-4 py-3 text-left text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all active:scale-98 touch-manipulation">
-                    Submit App
-                  </button>
-                  <button className="px-4 py-3 text-left text-sm font-semibold text-fog-700 dark:text-fog-300 hover:text-ice-600 dark:hover:text-ice-400 hover:bg-ice-50 dark:hover:bg-ice-900/20 rounded-lg transition-all active:scale-98 touch-manipulation">
-                    About
-                  </button>
-                  <div className="h-px bg-fog-200 dark:bg-fog-700 my-2"></div>
-                  <button className="px-4 py-3 text-left text-sm font-bold text-white bg-gradient-to-r from-ice-500 to-ice-600 hover:from-ice-600 hover:to-ice-700 rounded-lg transition-all active:scale-98 touch-manipulation shadow-md">
-                    Sign In
-                  </button>
-                </nav>
-              </div>
-            )}
           </div>
         </header>
 
