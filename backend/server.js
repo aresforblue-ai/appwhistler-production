@@ -86,7 +86,7 @@ const { initializeAgents, shutdownAgents, agents, getAgentStatus } = require('./
 (async () => {
   try {
     await initializeAgents();
-    logger.info('✅ All 20 AI agents initialized successfully');
+    logger.info('✅ All 21 AI agents initialized successfully');
   } catch (error) {
     logger.error('❌ Failed to initialize agents:', error.message);
   }

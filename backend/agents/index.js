@@ -15,6 +15,7 @@ const behaviorAnalysisAgent = require('./behaviorAnalysisAgent');
 const trendingDetectionAgent = require('./trendingDetectionAgent');
 const reviewAuthenticityAgent = require('./reviewAuthenticityAgent');
 const imageVerificationAgent = require('./imageVerificationAgent');
+const videoVerificationAgent = require('./videoVerificationAgent');
 const sourceCredibilityAgent = require('./sourceCredibilityAgent');
 const claimExtractionAgent = require('./claimExtractionAgent');
 const newsClassificationAgent = require('./newsClassificationAgent');
@@ -25,7 +26,7 @@ const citationVerificationAgent = require('./citationVerificationAgent');
 const realtimeMonitoringAgent = require('./realtimeMonitoringAgent');
 
 /**
- * Agent registry - all 20 AI agents
+ * Agent registry - all 21 AI agents
  */
 const agents = {
   contentModeration: contentModerationAgent,
@@ -40,6 +41,7 @@ const agents = {
   trendingDetection: trendingDetectionAgent,
   reviewAuthenticity: reviewAuthenticityAgent,
   imageVerification: imageVerificationAgent,
+  videoVerification: videoVerificationAgent,
   sourceCredibility: sourceCredibilityAgent,
   claimExtraction: claimExtractionAgent,
   newsClassification: newsClassificationAgent,
@@ -54,7 +56,7 @@ const agents = {
  * Initialize all agents
  */
 async function initializeAgents() {
-  console.log('🤖 Initializing 20 AI agents...');
+  console.log('🤖 Initializing 21 AI agents...');
   const startTime = Date.now();
 
   const initPromises = Object.entries(agents).map(async ([name, agent]) => {
@@ -74,7 +76,7 @@ async function initializeAgents() {
   const duration = Date.now() - startTime;
 
   const successCount = results.filter(r => r.status === 'ready').length;
-  console.log(`🎯 ${successCount}/20 agents initialized successfully in ${duration}ms`);
+  console.log(`🎯 ${successCount}/21 agents initialized successfully in ${duration}ms`);
 
   return results;
 }
