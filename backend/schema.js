@@ -248,6 +248,38 @@ const typeDefs = gql`
     message: String
   }
 
+  # URL Analysis result for extension
+  type UrlAnalysisResult {
+    url: String!
+    appName: String!
+    category: String
+    truthScore: Int!
+    letterGrade: String!
+    redFlags: [RedFlag!]
+    metadata: AppMetadata
+    analysis: AnalysisSummary
+  }
+
+  type RedFlag {
+    severity: String!
+    category: String!
+    description: String!
+  }
+
+  type AppMetadata {
+    developer: String
+    lastUpdated: String
+    userCount: String
+    avgRating: String
+  }
+
+  type AnalysisSummary {
+    summary: String!
+    strengths: [String!]
+    concerns: [String!]
+    verificationStatus: String!
+  }
+
   # Input types for mutations
   input RegisterInput {
     username: String!
@@ -304,6 +336,9 @@ const typeDefs = gql`
     app(id: ID!): App
     trendingApps(limit: Int): [App!]!
     recommendedApps(userId: ID!): [Recommendation!]!
+
+    # Extension support - analyze any URL for truth rating
+    analyzeUrl(url: String!): UrlAnalysisResult!
 
     # Fact Checks
     factChecks(
