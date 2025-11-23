@@ -31,7 +31,7 @@ const { perUserRateLimiter } = require('./middleware/rateLimiter');
 const PoolMonitor = require('./utils/poolMonitor');
 const { createComplexityPlugin } = require('./middleware/graphqlComplexity');
 const jobManager = require('./queues/jobManager');
-const { handleEmailJob, handleBlockchainJob, handleFactCheckJob } = require('./queues/jobHandlers');
+const { handleEmailJob, handleBlockchainJob, handleFactCheckJob, handleTruthAnalysisJob } = require('./queues/jobHandlers');
 const createPrivacyRouter = require('./routes/privacy');
 
 // Validate environment before starting - exits if critical variables are missing
@@ -77,8 +77,9 @@ pool.query('SELECT NOW()', (err, res) => {
 jobManager.registerWorker('email-jobs', handleEmailJob);
 jobManager.registerWorker('blockchain-jobs', handleBlockchainJob);
 jobManager.registerWorker('fact-check-jobs', handleFactCheckJob);
+jobManager.registerWorker('truth-analysis-jobs', handleTruthAnalysisJob);
 
-logger.info('✅ Background job queues initialized');
+logger.info('✅ Background job queues initialized (email, blockchain, fact-check, truth-analysis)');
 
 // Middleware: Security headers (protects against common attacks)
 const allowedOrigins = getArray('ALLOWED_ORIGINS', ',', [

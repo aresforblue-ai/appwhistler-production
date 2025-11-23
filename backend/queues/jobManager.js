@@ -46,7 +46,8 @@ class JobManager {
       this.queue = {
         email: new Queue('email-jobs', { connection: this.redisClient }),
         blockchain: new Queue('blockchain-jobs', { connection: this.redisClient }),
-        factCheck: new Queue('fact-check-jobs', { connection: this.redisClient })
+        factCheck: new Queue('fact-check-jobs', { connection: this.redisClient }),
+        truthAnalysis: new Queue('truth-analysis-jobs', { connection: this.redisClient })
       };
 
       this.redisEnabled = true;

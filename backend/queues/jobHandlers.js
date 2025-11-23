@@ -3,6 +3,10 @@
 
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
 const blockchain = require('../../blockchain/blockchain');
+const AgentOrchestrator = require('../agents/AgentOrchestrator');
+
+// Initialize agent orchestrator for truth analysis
+const orchestrator = new AgentOrchestrator();
 
 /**
  * Handler for email jobs
@@ -109,8 +113,142 @@ async function handleFactCheckJob(jobData) {
   }
 }
 
+/**
+ * Handler for truth analysis jobs
+ * Executes specialized agent analyses in the background
+ */
+async function handleTruthAnalysisJob(jobData) {
+  const { type, appId, analysisType, pool, appData, jobId } = jobData;
+
+  console.log(`🔍 Processing truth analysis job: ${analysisType} for app ${appId}`);
+
+  try {
+    // Update job status to running
+    if (pool && jobId) {
+      await pool.query(
+        'UPDATE analysis_jobs SET status = $1, progress = $2 WHERE id = $3',
+        ['running', 10, jobId]
+      );
+    }
+
+    let analysisResult;
+    const startTime = Date.now();
+
+    switch (analysisType) {
+      case 'FULL':
+        console.log(`🚀 Running FULL analysis for app ${appId} with all 5 agents...`);
+
+        // Update progress: 20%
+        if (pool && jobId) {
+          await pool.query(
+            'UPDATE analysis_jobs SET progress = $1 WHERE id = $2',
+            [20, jobId]
+          );
+        }
+
+        analysisResult = await orchestrator.runFullAnalysis({ appId, pool, appData });
+
+        // Save full analysis results to database
+        if (pool) {
+          await orchestrator.saveAnalysis(pool, analysisResult);
+        }
+        break;
+
+      case 'SOCIAL_ONLY':
+        console.log(`🐦 Running SOCIAL media analysis for app ${appId}...`);
+        analysisResult = await orchestrator.runAgent('social', { appId, pool, appData });
+        break;
+
+      case 'REVIEWS_ONLY':
+        console.log(`⭐ Running REVIEW authenticity analysis for app ${appId}...`);
+        analysisResult = await orchestrator.runAgent('reviews', { appId, pool, appData });
+        break;
+
+      case 'FINANCIAL':
+        console.log(`💰 Running FINANCIAL transparency analysis for app ${appId}...`);
+        analysisResult = await orchestrator.runAgent('financial', { appId, pool, appData });
+        break;
+
+      case 'DEVELOPER':
+        console.log(`👨‍💻 Running DEVELOPER background analysis for app ${appId}...`);
+        analysisResult = await orchestrator.runAgent('developer', { appId, pool, appData });
+        break;
+
+      case 'SECURITY':
+        console.log(`🔒 Running SECURITY & privacy analysis for app ${appId}...`);
+        analysisResult = await orchestrator.runAgent('security', { appId, pool, appData });
+        break;
+
+      case 'QUICK':
+        console.log(`⚡ Running QUICK refresh for app ${appId}...`);
+        // Quick refresh just updates metadata without deep analysis
+        analysisResult = {
+          app_id: appId,
+          quick_refresh: true,
+          completed_at: new Date().toISOString()
+        };
+        break;
+
+      default:
+        throw new Error(`Unknown analysis type: ${analysisType}`);
+    }
+
+    const duration = Math.round((Date.now() - startTime) / 1000);
+
+    // Update job status to completed
+    if (pool && jobId) {
+      await pool.query(
+        `UPDATE analysis_jobs
+         SET status = $1, progress = $2, completed_at = NOW(),
+             duration_seconds = $3, result = $4,
+             agents_used = $5
+         WHERE id = $6`,
+        [
+          'completed',
+          100,
+          duration,
+          JSON.stringify(analysisResult),
+          JSON.stringify(
+            analysisType === 'FULL'
+              ? ['reviews', 'social', 'financial', 'developer', 'security']
+              : [analysisType.toLowerCase().replace('_only', '')]
+          ),
+          jobId
+        ]
+      );
+    }
+
+    console.log(`✅ Truth analysis completed: ${analysisType} for app ${appId} in ${duration}s`);
+
+    return {
+      success: true,
+      type,
+      appId,
+      analysisType,
+      duration,
+      result: analysisResult
+    };
+
+  } catch (error) {
+    console.error(`❌ Truth analysis job failed: ${analysisType} for app ${appId}`, error);
+
+    // Update job status to failed
+    if (pool && jobId) {
+      await pool.query(
+        `UPDATE analysis_jobs
+         SET status = $1, error_message = $2, completed_at = NOW()
+         WHERE id = $3`,
+        ['failed', error.message, jobId]
+      );
+    }
+
+    throw error;
+  }
+}
+
 module.exports = {
   handleEmailJob,
   handleBlockchainJob,
-  handleFactCheckJob
+  handleFactCheckJob,
+  handleTruthAnalysisJob
 };

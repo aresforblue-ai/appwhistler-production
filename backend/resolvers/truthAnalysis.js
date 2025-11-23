@@ -4,6 +4,7 @@
 const AgentOrchestrator = require('../agents/AgentOrchestrator');
 const { createGraphQLError } = require('../utils/errorHandler');
 const { requireAuth, requireRole } = require('./helpers');
+const jobManager = require('../queues/jobManager');
 
 // Initialize the agent orchestrator
 const orchestrator = new AgentOrchestrator();
@@ -468,7 +469,7 @@ module.exports = {
   Mutation: {
     /**
      * Trigger comprehensive app analysis
-     * Creates an analysis job and runs it immediately (will be moved to queue in next phase)
+     * Creates an analysis job and submits it to the background queue
      */
     analyzeApp: async (_, { appId, analysisType }, { pool, user }) => {
       // Require authentication for analysis requests
@@ -487,92 +488,53 @@ module.exports = {
         const jobResult = await pool.query(
           `INSERT INTO analysis_jobs
            (app_id, job_type, status, progress, started_at, agent_version)
-           VALUES ($1, $2, 'running', 0, NOW(), '2.0')
+           VALUES ($1, $2, 'queued', 0, NOW(), '2.0')
            RETURNING *`,
           [appId, analysisType]
         );
 
         const job = jobResult.rows[0];
 
-        // Execute analysis based on type (synchronously for now, will be async with queue)
-        try {
-          let analysisResult;
-
-          switch (analysisType) {
-            case 'FULL':
-              analysisResult = await orchestrator.runFullAnalysis({ appId, pool, appData: app });
-              break;
-            case 'SOCIAL_ONLY':
-              analysisResult = await orchestrator.runAgent('social', { appId, pool, appData: app });
-              break;
-            case 'REVIEWS_ONLY':
-              analysisResult = await orchestrator.runAgent('reviews', { appId, pool, appData: app });
-              break;
-            case 'FINANCIAL':
-              analysisResult = await orchestrator.runAgent('financial', { appId, pool, appData: app });
-              break;
-            case 'DEVELOPER':
-              analysisResult = await orchestrator.runAgent('developer', { appId, pool, appData: app });
-              break;
-            case 'SECURITY':
-              analysisResult = await orchestrator.runAgent('security', { appId, pool, appData: app });
-              break;
-            default:
-              throw createGraphQLError('Invalid analysis type', 'VALIDATION_ERROR');
+        // Submit job to background queue
+        const queueJobId = await jobManager.submitJob(
+          'truthAnalysis',
+          {
+            type: 'truth-analysis',
+            appId,
+            analysisType,
+            pool,
+            appData: app,
+            jobId: job.id
+          },
+          {
+            priority: analysisType === 'FULL' ? 1 : 2, // FULL analysis has higher priority
+            attempts: 3, // Retry up to 3 times on failure
+            backoff: { type: 'exponential', delay: 5000 } // Exponential backoff starting at 5s
           }
+        );
 
-          // Save results if full analysis
-          if (analysisType === 'FULL') {
-            await orchestrator.saveAnalysis(pool, analysisResult);
-          }
+        console.log(`📤 Truth analysis job submitted: ${analysisType} for app ${appId} (Queue ID: ${queueJobId})`);
 
-          // Update job status to completed
-          const duration = Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000);
-          await pool.query(
-            `UPDATE analysis_jobs
-             SET status = 'completed', progress = 100, completed_at = NOW(),
-                 duration_seconds = $1, result = $2,
-                 agents_used = $3
-             WHERE id = $4`,
-            [
-              duration,
-              JSON.stringify(analysisResult),
-              JSON.stringify(analysisType === 'FULL' ? ['reviews', 'social', 'financial', 'developer', 'security'] : [analysisType.toLowerCase().replace('_only', '')]),
-              job.id
-            ]
-          );
-
-          console.log(`✅ Analysis completed for app ${appId} (${analysisType}) in ${duration}s`);
-
-          return {
-            id: job.id,
-            appId: job.app_id,
-            jobType: job.job_type,
-            status: 'completed',
-            progress: 100,
-            startedAt: job.started_at,
-            completedAt: new Date(),
-            durationSeconds: duration,
-            result: analysisResult,
-            agentVersion: '2.0',
-            agentsUsed: analysisType === 'FULL' ? ['reviews', 'social', 'financial', 'developer', 'security'] : [analysisType.toLowerCase().replace('_only', '')]
-          };
-
-        } catch (analysisError) {
-          // Update job status to failed
-          await pool.query(
-            `UPDATE analysis_jobs
-             SET status = 'failed', error_message = $1, completed_at = NOW()
-             WHERE id = $2`,
-            [analysisError.message, job.id]
-          );
-
-          throw createGraphQLError(`Analysis failed: ${analysisError.message}`, 'ANALYSIS_ERROR');
-        }
+        // Return job status immediately (queued)
+        return {
+          id: job.id,
+          appId: job.app_id,
+          jobType: job.job_type,
+          status: 'queued',
+          progress: 0,
+          startedAt: job.started_at,
+          completedAt: null,
+          durationSeconds: null,
+          result: null,
+          agentVersion: '2.0',
+          agentsUsed: analysisType === 'FULL'
+            ? ['reviews', 'social', 'financial', 'developer', 'security']
+            : [analysisType.toLowerCase().replace('_only', '')]
+        };
 
       } catch (error) {
-        console.error('Error analyzing app:', error);
-        throw error.extensions ? error : createGraphQLError('Failed to analyze app', 'INTERNAL_ERROR');
+        console.error('Error submitting analysis job:', error);
+        throw error.extensions ? error : createGraphQLError('Failed to submit analysis job', 'INTERNAL_ERROR');
       }
     },
 
