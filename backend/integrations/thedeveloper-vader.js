@@ -142,6 +142,11 @@ function classifyWithDecisionTree(features) {
  * Main analysis function
  */
 function analyzeReview(reviewText, rating, metadata = {}) {
+  // Validate rating bounds
+  if (rating < 1 || rating > 5 || typeof rating !== 'number') {
+    throw new Error('Rating must be a number between 1 and 5');
+  }
+
   const features = extractFeatures(reviewText, rating, metadata);
   const fakeScore = classifyWithDecisionTree(features);
   const mismatch = detectMismatch(reviewText, rating);
@@ -154,7 +159,10 @@ function analyzeReview(reviewText, rating, metadata = {}) {
              'LIKELY_GENUINE',
     features,
     sentimentMismatch: mismatch,
-    redFlags: generateRedFlags(features, mismatch)
+    redFlags: generateRedFlags(features, mismatch),
+    // Expose commonly used features
+    capsRatio: features.capsRatio,
+    exclamationRatio: features.exclamationRatio
   };
 }
 
@@ -190,9 +198,17 @@ function generateRedFlags(features, mismatch) {
 
   if (features.capsRatio > 0.3) {
     flags.push({
-      category: 'Formatting',
+      category: 'Excessive Caps',
       severity: 'LOW',
       description: 'Excessive use of capital letters'
+    });
+  }
+
+  if (features.exclamationRatio > 0.1) {
+    flags.push({
+      category: 'Excessive Exclamation',
+      severity: 'LOW',
+      description: 'Excessive use of exclamation marks'
     });
   }
 
