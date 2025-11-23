@@ -1,6 +1,13 @@
 #!/bin/bash
 # Security Scan Script for AppWhistler
 # Run this script before making the repository public
+#
+# NOTE: This is a basic scanner for common issues. For comprehensive security
+# scanning, consider using specialized tools like:
+# - TruffleHog (secrets detection): https://github.com/trufflesecurity/trufflehog
+# - detect-secrets: https://github.com/Yelp/detect-secrets
+# - GitGuardian: https://www.gitguardian.com/
+# - GitHub Advanced Security (for organizations)
 
 set -e
 

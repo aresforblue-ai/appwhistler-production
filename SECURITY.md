@@ -24,8 +24,8 @@ Instead, please report vulnerabilities through one of these secure channels:
    - Click "Report a vulnerability"
    - Fill in the details
 
-2. **Email**
-   - Send an email to: security@appwhistler.com (if available)
+2. **Email** (when email is set up)
+   - If you cannot use GitHub Security Advisories, open a private discussion thread
    - Include "SECURITY" in the subject line
    - Provide detailed information about the vulnerability
 
