@@ -82,14 +82,9 @@ Related to #
 - [ ] `npm audit` shows no new vulnerabilities
 
 ## Breaking Changes
-<!-- If this PR introduces breaking changes, describe them here and provide migration instructions -->
+<!-- If no breaking changes, write 'None'. Otherwise, list breaking changes and migration paths below: -->
 
 None
-
-OR
-
-- Breaking change 1: Description and migration path
-- Breaking change 2: Description and migration path
 
 ## Performance Impact
 <!-- Describe any performance implications of these changes -->

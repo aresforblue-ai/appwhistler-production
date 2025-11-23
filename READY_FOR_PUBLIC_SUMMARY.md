@@ -62,10 +62,10 @@ git show 625d62f:.env
 ```
 
 Known contents (from this PR):
-- JWT_SECRET: `appwhistler_dev_secret_change_in_production`
-- REFRESH_TOKEN_SECRET: `refresh_secret_change_in_production`
-- DB_PASSWORD: `postgres`
-- DB_USER: `postgres`
+- JWT_SECRET: `[dev secret - see commit for details]`
+- REFRESH_TOKEN_SECRET: `[dev secret - see commit for details]`
+- DB_PASSWORD: `[dev secret - see commit for details]`
+- DB_USER: `[dev secret - see commit for details]`
 - Other development configuration
 
 ### Decision Required

@@ -141,7 +141,7 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 10
     reviewers:
-      - "your-username"
+      - "aresforblue-ai"
     
   # Backend dependencies
   - package-ecosystem: "npm"

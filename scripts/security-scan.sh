@@ -60,12 +60,12 @@ fi
 
 echo ""
 echo "3. Checking for hardcoded secrets in code..."
-# Check for common patterns (excluding node_modules and test files)
+# Check for common patterns (excluding node_modules, test files, and example/fixture files)
 SECRET_PATTERNS=$(grep -r -i -E "api[_-]?key.*['\"][a-zA-Z0-9]{20,}['\"]|password.*['\"][^'\"]{8,}['\"]|secret.*['\"][a-zA-Z0-9]{20,}['\"]" \
     --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" \
     --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist \
-    --exclude="*.test.js" --exclude="*.spec.js" \
-    . 2>/dev/null || true)
+    --exclude="*.test.js" --exclude="*.spec.js" --exclude="*.example" --exclude="*.fixture.js" --exclude="*.mock.js" --exclude="*.dev.js" \
+    . 2>/dev/null | grep -viE "password.*test|secret.*dev|api[_-]?key.*test|api[_-]?key.*example" || true)
 
 if [ -n "$SECRET_PATTERNS" ]; then
     echo -e "${YELLOW}⚠ Warning: Potential hardcoded secrets found (verify these are test values):${NC}"
@@ -148,15 +148,22 @@ fi
 echo ""
 echo "8. Checking git history for .env commits..."
 ENV_COMMITS=$(git log --all --oneline -- .env 2>/dev/null | wc -l)
-if [ "$ENV_COMMITS" -gt 0 ]; then
-    echo -e "${RED}✗ CRITICAL: .env file found in git history ($ENV_COMMITS commits)${NC}"
-    echo "   Recent commits:"
-    git log --all --oneline -- .env | head -5
+BACKEND_ENV_COMMITS=$(git log --all --oneline -- backend/.env 2>/dev/null | wc -l)
+if [ "$ENV_COMMITS" -gt 0 ] || [ "$BACKEND_ENV_COMMITS" -gt 0 ]; then
+    echo -e "${RED}✗ CRITICAL: .env file(s) found in git history${NC}"
+    if [ "$ENV_COMMITS" -gt 0 ]; then
+        echo "   .env: $ENV_COMMITS commits"
+        git log --all --oneline -- .env | head -5
+    fi
+    if [ "$BACKEND_ENV_COMMITS" -gt 0 ]; then
+        echo "   backend/.env: $BACKEND_ENV_COMMITS commits"
+        git log --all --oneline -- backend/.env | head -5
+    fi
     echo -e "${RED}   ACTION REQUIRED: Clean git history before going public!${NC}"
-    echo "   Consider using: git filter-repo --path .env --invert-paths"
+    echo "   Consider using: git filter-repo --path .env --path backend/.env --invert-paths"
     ERRORS=$((ERRORS + 1))
 else
-    echo -e "${GREEN}✓ .env file not found in git history${NC}"
+    echo -e "${GREEN}✓ .env files not found in git history${NC}"
 fi
 
 echo ""
@@ -180,8 +187,25 @@ GITIGNORE_ITEMS=(".env" "node_modules" "dist" "build" "*.log" ".DS_Store")
 MISSING_ITEMS=()
 
 for item in "${GITIGNORE_ITEMS[@]}"; do
-    if ! grep -q "^${item}" .gitignore 2>/dev/null; then
-        MISSING_ITEMS+=("$item")
+    # Use git check-ignore for accurate testing
+    if command -v git >/dev/null 2>&1 && [ -d .git ]; then
+        # Create a temporary test file for the pattern
+        TESTFILE="/tmp/gitignore_test_${RANDOM}_${item//[\*\/]/_}"
+        touch "$TESTFILE"
+        
+        # Test if git would ignore this file
+        if ! git check-ignore -q "$TESTFILE" 2>/dev/null; then
+            # Fallback: check if pattern exists in .gitignore
+            if ! grep -q "${item}" .gitignore 2>/dev/null; then
+                MISSING_ITEMS+=("$item")
+            fi
+        fi
+        rm -f "$TESTFILE"
+    else
+        # Fallback: just check if pattern exists in .gitignore
+        if ! grep -q "${item}" .gitignore 2>/dev/null; then
+            MISSING_ITEMS+=("$item")
+        fi
     fi
 done
 

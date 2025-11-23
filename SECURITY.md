@@ -43,7 +43,7 @@ Please include the following information in your report:
 
 ### Response Timeline
 
-- **Initial Response**: Within 48 hours
+- **Initial Response**: Within 48 calendar hours (UTC)
 - **Status Update**: Within 7 days
 - **Fix Timeline**: Varies based on severity
   - Critical: 1-7 days

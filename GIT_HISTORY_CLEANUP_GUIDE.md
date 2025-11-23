@@ -38,11 +38,8 @@ cd ..
 cp -r appwhistler-production appwhistler-production-backup
 cd appwhistler-production
 
-# Remove .env from all history
-git filter-repo --path .env --invert-paths --force
-
-# Remove backend/.env if it exists in history
-git filter-repo --path backend/.env --invert-paths --force
+# Remove .env and backend/.env from all history in one pass
+git filter-repo --path .env --path backend/.env --invert-paths --force
 
 # Verify .env is gone
 git log --all --full-history -- .env

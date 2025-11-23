@@ -78,7 +78,7 @@ git log --all -S "secret" --source --all
 - [✅] Enable Dependabot alerts
 - [✅] Enable Dependabot security updates
 - [✅] Enable Dependabot version updates
-- [ ] Enable code scanning (CodeQL) - requires GitHub Advanced Security
+- [ ] Enable code scanning (CodeQL) - free for public repos, requires GitHub Advanced Security for private repos
 - [ ] Enable secret scanning
 - [ ] Enable push protection for secrets
 - [ ] Enable private vulnerability reporting
