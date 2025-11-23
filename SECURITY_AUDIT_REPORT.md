@@ -1,4 +1,5 @@
 # AppWhistler Security Audit Report
+
 **Date**: November 22, 2025  
 **Auditor**: Security Analysis Tool  
 **Scope**: Full Codebase Analysis
@@ -16,6 +17,7 @@ This security audit identified **18 critical vulnerabilities**, **12 high-priori
 ## 🔴 CRITICAL VULNERABILITIES (18)
 
 ### 1. **Hardcoded Secrets in Version Control**
+
 **Severity**: CRITICAL  
 **CWE**: CWE-798 (Use of Hard-coded Credentials)  
 **CVE Reference**: Similar to CVE-2021-21236
@@ -51,6 +53,7 @@ git commit -m "Remove .env from version control"
 ---
 
 ### 2. **Vulnerable Dependencies - Axios SSRF & DoS**
+
 **Severity**: CRITICAL  
 **CWE**: CWE-918 (SSRF), CWE-770 (Unrestricted Resource Allocation)  
 **CVE References**: 
@@ -93,6 +96,7 @@ npm audit
 ---
 
 ### 3. **Missing CSRF Protection**
+
 **Severity**: CRITICAL  
 **CWE**: CWE-352 (Cross-Site Request Forgery)  
 **CVE Reference**: Similar to CVE-2020-26870
@@ -161,6 +165,7 @@ const authLink = setContext(async (_, { headers }) => {
 ---
 
 ### 4. **Weak Password Policy**
+
 **Severity**: HIGH  
 **CWE**: CWE-521 (Weak Password Requirements)
 
@@ -235,6 +240,7 @@ function validatePassword(password) {
 ---
 
 ### 5. **Bcrypt Work Factor Too Low**
+
 **Severity**: HIGH  
 **CWE**: CWE-916 (Use of Password Hash With Insufficient Computational Effort)
 
@@ -271,6 +277,7 @@ const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 ---
 
 ### 6. **JWT Secret Uses Insecure Fallback**
+
 **Severity**: CRITICAL  
 **CWE**: CWE-1391 (Use of Weak Credentials)
 
@@ -314,6 +321,7 @@ REFRESH_TOKEN_SECRET: requireSecret('REFRESH_TOKEN_SECRET'),
 ---
 
 ### 7. **Sensitive Data Exposure in Console Logs**
+
 **Severity**: HIGH  
 **CWE**: CWE-532 (Insertion of Sensitive Information into Log File)
 
@@ -402,6 +410,7 @@ module.exports = secureLogger;
 ---
 
 ### 8. **No JWT Token Expiration Validation on Refresh**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-613 (Insufficient Session Expiration)
 
@@ -462,6 +471,7 @@ async function refreshAccessToken(refreshToken, pool) {
 ---
 
 ### 9. **Missing Rate Limiting on Authentication Endpoints**
+
 **Severity**: HIGH  
 **CWE**: CWE-307 (Improper Restriction of Excessive Authentication Attempts)
 
@@ -523,6 +533,7 @@ app.use('/graphql', (req, res, next) => {
 ---
 
 ### 10. **File Upload Path Traversal Vulnerability**
+
 **Severity**: HIGH  
 **CWE**: CWE-22 (Path Traversal)
 
@@ -570,6 +581,7 @@ const fileFilter = (req, file, cb) => {
 ## 🟠 HIGH PRIORITY ISSUES (12)
 
 ### 11. **Missing HTTP Security Headers**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-693 (Protection Mechanism Failure)
 
@@ -615,6 +627,7 @@ app.use(helmet({
 ---
 
 ### 12. **CORS Configuration Allows Null Origin in Development**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-346 (Origin Validation Error)
 
@@ -661,6 +674,7 @@ origin: (origin, callback) => {
 ---
 
 ### 13. **Unrestricted File Upload Size**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-770 (Allocation of Resources Without Limits)
 
@@ -717,6 +731,7 @@ function checkConcurrentUploads(req, res, next) {
 ---
 
 ### 14. **Unvalidated Redirects (OAuth Flow)**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-601 (URL Redirection to Untrusted Site)
 
@@ -744,6 +759,7 @@ function validateRedirectUri(uri) {
 ---
 
 ### 15. **GraphQL Introspection Enabled in Production**
+
 **Severity**: LOW  
 **CWE**: CWE-200 (Exposure of Sensitive Information)
 
@@ -760,6 +776,7 @@ introspection: NODE_ENV !== 'production', // Disable in prod
 ---
 
 ### 16. **Missing Content-Type Validation**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-434 (Unrestricted Upload of File with Dangerous Type)
 
@@ -806,6 +823,7 @@ router.post('/avatar', uploadAvatar, async (req, res) => {
 ---
 
 ### 17. **Database Connection Pool Not Bounded**
+
 **Severity**: LOW  
 **CWE**: CWE-400 (Uncontrolled Resource Consumption)
 
@@ -830,6 +848,7 @@ function getDatabaseConfig() {
 ---
 
 ### 18. **Email Template Injection**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-74 (Improper Neutralization of Special Elements)
 
@@ -875,6 +894,7 @@ function sendWelcomeEmail(toEmail, username, truthScore) {
 ## 🟡 MEDIUM PRIORITY ISSUES (8)
 
 ### 19. **JWT Algorithm Not Specified (Algorithm Confusion)**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-327 (Use of a Broken or Risky Cryptographic Algorithm)  
 **CVE Reference**: Similar to CVE-2015-9235
@@ -911,6 +931,7 @@ jwt.verify(token, JWT_SECRET, {
 ---
 
 ### 20. **No SQL Injection Protection Verification**
+
 **Severity**: LOW  
 **CWE**: CWE-89 (SQL Injection)
 
@@ -936,6 +957,7 @@ await context.pool.query(
 ---
 
 ### 21. **localStorage Used for Sensitive Data (XSS Risk)**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-922 (Insecure Storage of Sensitive Information)
 
@@ -995,6 +1017,7 @@ login: async (_, { input }, context) => {
 ---
 
 ### 22. **Missing Security.txt File**
+
 **Severity**: LOW  
 **CWE**: N/A (Best Practice)
 
@@ -1014,6 +1037,7 @@ Acknowledgments: https://appwhistler.com/security/hall-of-fame
 ---
 
 ### 23. **GraphQL Query Complexity Not Fully Enforced**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-770 (Allocation of Resources Without Limits or Throttling)
 
@@ -1053,6 +1077,7 @@ const apolloServer = new ApolloServer({
 ---
 
 ### 24. **No Input Length Limits on GraphQL Queries**
+
 **Severity**: MEDIUM  
 **CWE**: CWE-400 (Uncontrolled Resource Consumption)
 
@@ -1081,6 +1106,7 @@ app.use('/graphql', (req, res, next) => {
 ---
 
 ### 25. **Timing Attack on Password Comparison**
+
 **Severity**: LOW  
 **CWE**: CWE-208 (Observable Timing Discrepancy)
 
@@ -1101,6 +1127,7 @@ throw createGraphQLError('Invalid email or password', 'UNAUTHENTICATED');
 ---
 
 ### 26. **Database Password in Plain Text .env File**
+
 **Severity**: CRITICAL (already covered in #1)
 
 **Additional Recommendation**:
@@ -1145,6 +1172,7 @@ async function loadSecretsFromSource() {
 ## 🎯 Remediation Priority
 
 ### Immediate (Within 24 hours):
+
 1. ✅ Remove .env from Git and rotate ALL secrets
 2. ✅ Update vulnerable Axios dependency
 3. ✅ Implement CSRF protection
@@ -1152,6 +1180,7 @@ async function loadSecretsFromSource() {
 5. ✅ Strengthen password policy (12 char min, complexity)
 
 ### High Priority (Within 1 week):
+
 6. Replace console.* with Winston logger + sanitization
 7. Add authentication rate limiting
 8. Implement refresh token rotation
@@ -1159,6 +1188,7 @@ async function loadSecretsFromSource() {
 10. Add JWT algorithm specification
 
 ### Medium Priority (Within 1 month):
+
 11. Implement HTTP-only cookie authentication
 12. Add security.txt file
 13. Enhance GraphQL query complexity enforcement
@@ -1206,11 +1236,13 @@ echo "⚠️  IMPORTANT: Rotate all secrets in .env immediately!"
 ## 📚 Compliance Impact
 
 ### GDPR (EU General Data Protection Regulation):
+
 - ❌ Article 32: Inadequate security measures (exposed secrets, weak encryption)
 - ✅ Article 17: Right to erasure implemented (`/api/v1/privacy`)
 - ⚠️ Article 33: Breach notification required if .env exposure led to data breach
 
 ### OWASP Top 10 2021:
+
 - ✅ A01:2021 – Broken Access Control: Properly implemented
 - ❌ A02:2021 – Cryptographic Failures: Weak bcrypt rounds, exposed secrets
 - ❌ A03:2021 – Injection: SQL injection prevented, but CSRF vulnerable
@@ -1227,6 +1259,7 @@ echo "⚠️  IMPORTANT: Rotate all secrets in .env immediately!"
 ## 🧪 Security Testing Recommendations
 
 ### 1. **Penetration Testing**
+
 ```bash
 # Install OWASP ZAP for automated scanning
 docker run -t owasp/zap2docker-stable zap-baseline.py \
@@ -1234,6 +1267,7 @@ docker run -t owasp/zap2docker-stable zap-baseline.py \
 ```
 
 ### 2. **Dependency Scanning**
+
 ```bash
 # Install Snyk for continuous monitoring
 npm install -g snyk
@@ -1242,6 +1276,7 @@ snyk monitor
 ```
 
 ### 3. **Secret Scanning**
+
 ```bash
 # Install TruffleHog to scan Git history
 docker run --rm -v "$PWD:/pwd" \
@@ -1249,6 +1284,7 @@ docker run --rm -v "$PWD:/pwd" \
 ```
 
 ### 4. **Static Analysis**
+
 ```bash
 # Install SonarQube for code quality
 npm install -g sonarqube-scanner

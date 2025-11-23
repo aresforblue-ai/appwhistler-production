@@ -1,4 +1,5 @@
 # AppWhistler - GitHub Issues Tracker
+
 ## All 141 Issues from Comprehensive Code Audit
 
 This document contains all 141 issues identified in the code audit, ready to be converted into GitHub Issues. Each issue includes severity, affected files, description, and acceptance criteria.
@@ -10,6 +11,7 @@ This document contains all 141 issues identified in the code audit, ready to be 
 ### Security Issues (1-18)
 
 #### Issue #1: `.env` File Committed to Git Repository
+
 **Severity**: CRITICAL  
 **Labels**: `security`, `critical`, `config`  
 **Files**: `.env`
@@ -18,11 +20,13 @@ This document contains all 141 issues identified in the code audit, ready to be 
 The `.env` file containing JWT secrets, database passwords, and API keys was committed to Git repository and is publicly accessible. This exposes all production secrets.
 
 **Impact**:
+
 - JWT_SECRET exposed → attackers can forge authentication tokens
 - DB_PASSWORD exposed → database can be compromised
 - API keys exposed → unauthorized API usage and billing
 
 **Acceptance Criteria**:
+
 - [x] `.env` removed from Git tracking
 - [ ] All secrets rotated (JWT_SECRET, DB_PASSWORD, API keys)
 - [ ] `.env` added to `.gitignore`
@@ -34,6 +38,7 @@ The `.env` file containing JWT secrets, database passwords, and API keys was com
 ---
 
 #### Issue #2: SQL Injection via ILIKE Pattern in App Search
+
 **Severity**: CRITICAL  
 **Labels**: `security`, `sql-injection`, `backend`  
 **Files**: `backend/resolvers/apps.js:38`
@@ -42,17 +47,20 @@ The `.env` file containing JWT secrets, database passwords, and API keys was com
 User-controlled search input is used in ILIKE patterns without escaping special characters (`%`, `_`), allowing pattern injection attacks.
 
 **Vulnerable Code**:
+
 ```javascript
 const likePattern = `%${normalizedSearch.replace(/\s+/g, '%')}%`;
 ```
 
 **Attack Vector**:
+
 ```
 Search query: "% OR 1=1 --"
 Resulting pattern: "%%OR%1=1%--%"
 ```
 
 **Acceptance Criteria**:
+
 - [x] Escape special ILIKE characters (`%`, `_`, `\`)
 - [ ] Add unit tests for malicious input patterns
 - [ ] Verify parameterized queries used
@@ -63,6 +71,7 @@ Resulting pattern: "%%OR%1=1%--%"
 ---
 
 #### Issue #3: SQL Injection in Fact-Check Search
+
 **Severity**: CRITICAL  
 **Labels**: `security`, `sql-injection`, `backend`  
 **Files**: `backend/resolvers/factChecks.js:24,75,101`
@@ -71,6 +80,7 @@ Resulting pattern: "%%OR%1=1%--%"
 Same ILIKE pattern vulnerability as Issue #2 in fact-check search queries.
 
 **Acceptance Criteria**:
+
 - [ ] Apply same escaping fix as apps.js
 - [ ] Create shared `escapeLikePattern()` helper function
 - [ ] Audit all ILIKE usage in codebase
@@ -78,6 +88,7 @@ Same ILIKE pattern vulnerability as Issue #2 in fact-check search queries.
 ---
 
 #### Issue #4: Missing Authentication on `recommendedApps` Query
+
 **Severity**: CRITICAL  
 **Labels**: `security`, `authorization`, `backend`  
 **Files**: `backend/resolvers/apps.js:105-116`
@@ -86,11 +97,13 @@ Same ILIKE pattern vulnerability as Issue #2 in fact-check search queries.
 Query accepts `userId` parameter but has NO authentication check. Anyone can view any user's recommendations by supplying arbitrary user IDs.
 
 **Privacy Impact**:
+
 - Exposes user interests and behavior
 - Reveals apps user is considering
 - GDPR violation (unauthorized data access)
 
 **Acceptance Criteria**:
+
 - [ ] Add `requireAuth(context)` call
 - [ ] Verify userId matches authenticated user
 - [ ] Add admin override for support
@@ -99,6 +112,7 @@ Query accepts `userId` parameter but has NO authentication check. Anyone can vie
 ---
 
 #### Issue #5: XSS Vulnerability in App Descriptions
+
 **Severity**: CRITICAL  
 **Labels**: `security`, `xss`, `frontend`  
 **Files**: `src/components/AppCard.jsx:34`
@@ -107,11 +121,13 @@ Query accepts `userId` parameter but has NO authentication check. Anyone can vie
 User-generated content (app descriptions) rendered directly without sanitization. If description contains malicious HTML/JavaScript, it executes in user's browser.
 
 **Attack Vector**:
+
 ```javascript
 app.description = "<img src=x onerror=alert(document.cookie)>"
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Install DOMPurify: `npm install dompurify`
 - [ ] Sanitize all user-generated content before render
 - [ ] Add CSP headers to prevent inline scripts
@@ -122,6 +138,7 @@ app.description = "<img src=x onerror=alert(document.cookie)>"
 ---
 
 #### Issue #6: React App Missing Error Boundary
+
 **Severity**: CRITICAL  
 **Labels**: `frontend`, `stability`, `react`  
 **Files**: `src/main.jsx`
@@ -130,11 +147,13 @@ app.description = "<img src=x onerror=alert(document.cookie)>"
 Application has no error boundary. Any unhandled React error causes complete app crash (white screen of death).
 
 **User Impact**:
+
 - Poor user experience
 - No error recovery
 - No error logging to Sentry
 
 **Acceptance Criteria**:
+
 - [x] Create ErrorBoundary component
 - [x] Wrap App in ErrorBoundary
 - [ ] Add Sentry integration
@@ -144,6 +163,7 @@ Application has no error boundary. Any unhandled React error causes complete app
 ---
 
 #### Issue #7: WebSocket Memory Leak
+
 **Severity**: CRITICAL  
 **Labels**: `frontend`, `memory-leak`, `websocket`  
 **Files**: `src/apollo/client.js:32-45`
@@ -152,11 +172,13 @@ Application has no error boundary. Any unhandled React error causes complete app
 WebSocket connection created but never cleaned up. Persists across component unmounts and remounts, accumulating multiple connections.
 
 **Impact**:
+
 - Memory consumption increases over time
 - Network resource exhaustion
 - Browser crash after multiple navigation cycles
 
 **Acceptance Criteria**:
+
 - [x] Export `cleanupWebSocket()` function
 - [ ] Call cleanup on app unmount
 - [ ] Call cleanup on user logout
@@ -166,6 +188,7 @@ WebSocket connection created but never cleaned up. Persists across component unm
 ---
 
 #### Issue #8: Missing Authorization on `user` Query
+
 **Severity**: HIGH  
 **Labels**: `security`, `authorization`, `privacy`  
 **Files**: `backend/resolvers/users.js:8-11`
@@ -174,6 +197,7 @@ WebSocket connection created but never cleaned up. Persists across component unm
 Any user can query detailed information about any other user without restrictions. Exposes email, wallet addresses, reputation scores.
 
 **Acceptance Criteria**:
+
 - [ ] Add privacy settings to user model
 - [ ] Check profileVisibility setting
 - [ ] Redact sensitive fields for non-owners
@@ -182,6 +206,7 @@ Any user can query detailed information about any other user without restriction
 ---
 
 #### Issue #9: Authorization Bypass via Nullable `context.user`
+
 **Severity**: HIGH  
 **Labels**: `security`, `authorization`, `backend`  
 **Files**: `backend/resolvers/users.js:121,154`
@@ -190,6 +215,7 @@ Any user can query detailed information about any other user without restriction
 Authorization checks use `context.user?.role` which can be null/undefined, potentially bypassing auth in edge cases.
 
 **Acceptance Criteria**:
+
 - [ ] Replace with `requireAuth(context)` pattern
 - [ ] Ensure all resolvers use requireAuth
 - [ ] Add unit tests for auth bypass attempts
@@ -197,6 +223,7 @@ Authorization checks use `context.user?.role` which can be null/undefined, poten
 ---
 
 #### Issue #10: Missing Input Validation on Pagination Limits
+
 **Severity**: HIGH  
 **Labels**: `security`, `dos`, `backend`  
 **Files**: `backend/resolvers/apps.js:9`, `backend/resolvers/factChecks.js:11`
@@ -205,6 +232,7 @@ Authorization checks use `context.user?.role` which can be null/undefined, poten
 No validation on `limit` and `offset` parameters. Attacker can set `limit: 999999999` to retrieve entire database tables, causing memory exhaustion.
 
 **Acceptance Criteria**:
+
 - [ ] Enforce max limit of 100
 - [ ] Validate offset >= 0
 - [ ] Create `sanitizePaginationParams()` helper
@@ -213,6 +241,7 @@ No validation on `limit` and `offset` parameters. Attacker can set `limit: 99999
 ---
 
 #### Issue #11: Missing Rate Limiting on `submitFactCheck`
+
 **Severity**: HIGH  
 **Labels**: `security`, `rate-limiting`, `backend`  
 **Files**: `backend/resolvers/factChecks.js:184-247`
@@ -221,6 +250,7 @@ No validation on `limit` and `offset` parameters. Attacker can set `limit: 99999
 No rate limiting specific to fact-check submissions. Users can spam fact-checks and overwhelm moderation.
 
 **Acceptance Criteria**:
+
 - [ ] Limit to 10 submissions per hour per user
 - [ ] Store rate limit data in Redis
 - [ ] Return rate limit info in error
@@ -229,6 +259,7 @@ No rate limiting specific to fact-check submissions. Users can spam fact-checks 
 ---
 
 #### Issue #12: Race Condition in Vote Transaction
+
 **Severity**: MEDIUM-HIGH  
 **Labels**: `backend`, `concurrency`, `database`  
 **Files**: `backend/resolvers/factChecks.js:260-355`
@@ -237,6 +268,7 @@ No rate limiting specific to fact-check submissions. Users can spam fact-checks 
 Vote transaction uses BEGIN/COMMIT but SELECT and UPDATE are not properly locked. Concurrent votes can result in incorrect vote counts.
 
 **Acceptance Criteria**:
+
 - [ ] Add `FOR UPDATE` to SELECT queries
 - [ ] Test with 100 concurrent votes
 - [ ] Verify vote count accuracy
@@ -244,6 +276,7 @@ Vote transaction uses BEGIN/COMMIT but SELECT and UPDATE are not properly locked
 ---
 
 #### Issue #13: Connection Pool Leak in Transactions
+
 **Severity**: CRITICAL  
 **Labels**: `backend`, `database`, `memory-leak`  
 **Files**: `backend/resolvers/users.js`, `backend/resolvers/factChecks.js`
@@ -252,17 +285,20 @@ Vote transaction uses BEGIN/COMMIT but SELECT and UPDATE are not properly locked
 Transactions don't acquire dedicated clients from pool. Uses `pool.query('BEGIN')` which doesn't guarantee same connection for transaction.
 
 **Impact**:
+
 - Transactions can execute on different connections
 - Connection pool exhaustion
 - Data corruption risk
 
 **Acceptance Criteria**:
+
 - [ ] Use `const client = await pool.connect()`
 - [ ] Add `finally { client.release() }` blocks
 - [ ] Test with 1000+ concurrent transactions
 - [ ] Monitor pool metrics
 
 **Example Fix**:
+
 ```javascript
 const client = await pool.connect();
 try {
@@ -280,6 +316,7 @@ try {
 ---
 
 #### Issue #14: Broken `config/secrets` Module Pattern
+
 **Severity**: CRITICAL  
 **Labels**: `backend`, `config`, `architecture`  
 **Files**: 20+ backend files
@@ -288,6 +325,7 @@ try {
 20+ files import `require('../../config/secrets')` or `require('../config/secrets')` but this module doesn't exist. Causes runtime failures.
 
 **Files Affected**:
+
 - `backend/server.js:21`
 - `backend/utils/email.js:4`
 - `backend/resolvers/*.js`
@@ -295,6 +333,7 @@ try {
 - 15+ other files
 
 **Acceptance Criteria**:
+
 - [ ] Create `backend/config/secrets.js` module
 - [ ] OR rename all imports to use `config-secrets.cjs`
 - [ ] OR refactor to use `dotenv` directly
@@ -304,17 +343,20 @@ try {
 ---
 
 #### Issue #15: Missing Dependencies in Backend
+
 **Severity**: CRITICAL  
 **Labels**: `backend`, `dependencies`, `config`  
 **Files**: `backend/package.json`
 
 **Description**:
 Three critical packages referenced in code but not in `package.json`:
+
 - `@sendgrid/mail` (email functionality broken)
 - `redis` (caching degraded to in-memory)
 - `bullmq` (job queues degraded)
 
 **Acceptance Criteria**:
+
 - [x] Add `@sendgrid/mail@^8.1.4`
 - [x] Add `redis@^4.7.0`
 - [x] Add `bullmq@^5.34.2`
@@ -326,12 +368,14 @@ Three critical packages referenced in code but not in `package.json`:
 ---
 
 #### Issue #16: Backend Dependency Version Conflicts
+
 **Severity**: CRITICAL  
 **Labels**: `backend`, `dependencies`, `build`  
 **Files**: `backend/package.json`
 
 **Description**:
 Five packages specify non-existent versions, causing npm install failures:
+
 - `express-rate-limit: ^8.2.1` (doesn't exist, use 7.5.1)
 - `multer: ^2.0.2` (doesn't exist, use 1.4.5-lts.2)
 - `sharp: ^0.34.5` (doesn't exist, use 0.33.5)
@@ -339,6 +383,7 @@ Five packages specify non-existent versions, causing npm install failures:
 - `bcrypt: ^6.0.0` (doesn't exist, use 5.1.1)
 
 **Acceptance Criteria**:
+
 - [x] Fix all version numbers
 - [x] Run `npm install` successfully
 - [ ] Update package-lock.json
@@ -347,6 +392,7 @@ Five packages specify non-existent versions, causing npm install failures:
 ---
 
 #### Issue #17: Vulnerable Axios Dependency
+
 **Severity**: HIGH  
 **Labels**: `security`, `dependencies`, `backend`  
 **CVE**: CVE-2023-45857
@@ -355,6 +401,7 @@ Five packages specify non-existent versions, causing npm install failures:
 Axios version has known SSRF, DoS, and CSRF vulnerabilities.
 
 **Acceptance Criteria**:
+
 - [ ] Run `npm update axios`
 - [ ] Run `npm audit fix`
 - [ ] Verify no regression in API calls
@@ -362,6 +409,7 @@ Axios version has known SSRF, DoS, and CSRF vulnerabilities.
 ---
 
 #### Issue #18: Weak Password Policy
+
 **Severity**: HIGH  
 **Labels**: `security`, `authentication`, `backend`  
 **Files**: `backend/utils/validation.js`
@@ -370,6 +418,7 @@ Axios version has known SSRF, DoS, and CSRF vulnerabilities.
 Password validation requires only 8 characters with no complexity requirements (no uppercase, numbers, special chars).
 
 **Acceptance Criteria**:
+
 - [ ] Increase minimum to 12 characters
 - [ ] Require uppercase + lowercase + number + special char
 - [ ] Add password strength meter
@@ -380,11 +429,13 @@ Password validation requires only 8 characters with no complexity requirements (
 ### Database Issues (19-25)
 
 #### Issue #19: Missing Database Indexes
+
 **Severity**: HIGH  
 **Labels**: `database`, `performance`
 
 **Description**:
 Frequently-queried columns lack indexes, causing full table scans:
+
 - `users.truth_score` (leaderboard query)
 - `fact_check_votes.user_id`
 - `fact_check_votes.fact_check_id`
@@ -392,6 +443,7 @@ Frequently-queried columns lack indexes, causing full table scans:
 - `activity_log.user_id`
 
 **Acceptance Criteria**:
+
 - [ ] Create indexes using migration script
 - [ ] Run EXPLAIN ANALYZE to verify usage
 - [ ] Measure query performance improvement
@@ -400,6 +452,7 @@ Frequently-queried columns lack indexes, causing full table scans:
 ---
 
 #### Issue #20: Missing Pool Error Handler
+
 **Severity**: CRITICAL  
 **Labels**: `database`, `stability`  
 **Files**: `backend/server.js`
@@ -408,6 +461,7 @@ Frequently-queried columns lack indexes, causing full table scans:
 PostgreSQL pool has no error handler. Unexpected errors on idle clients crash the process.
 
 **Acceptance Criteria**:
+
 - [ ] Add `pool.on('error', ...)` handler
 - [ ] Log errors to Sentry
 - [ ] Graceful shutdown on fatal errors
@@ -415,6 +469,7 @@ PostgreSQL pool has no error handler. Unexpected errors on idle clients crash th
 ---
 
 #### Issue #21: SQLite Fallback Broken
+
 **Severity**: HIGH  
 **Labels**: `database`, `development`  
 **Files**: `backend/server.js`
@@ -423,6 +478,7 @@ PostgreSQL pool has no error handler. Unexpected errors on idle clients crash th
 SQLite fallback for development has no connection pooling. Concurrent requests cause "database locked" errors.
 
 **Acceptance Criteria**:
+
 - [ ] Remove SQLite fallback OR
 - [ ] Add proper SQLite connection pooling
 - [ ] Document PostgreSQL-only requirement
@@ -430,6 +486,7 @@ SQLite fallback for development has no connection pooling. Concurrent requests c
 ---
 
 #### Issue #22: GDPR Deletion Not Transactional
+
 **Severity**: CRITICAL  
 **Labels**: `database`, `compliance`, `gdpr`  
 **Files**: `backend/resolvers/users.js`
@@ -438,6 +495,7 @@ SQLite fallback for development has no connection pooling. Concurrent requests c
 User data deletion uses sequential queries without transaction. Partial failure leaves orphaned data, violating GDPR.
 
 **Acceptance Criteria**:
+
 - [ ] Wrap all deletions in single transaction
 - [ ] Add foreign key CASCADE deletes
 - [ ] Test rollback on failure
@@ -446,6 +504,7 @@ User data deletion uses sequential queries without transaction. Partial failure 
 ---
 
 #### Issue #23: No Query Timeout Configuration
+
 **Severity**: MEDIUM  
 **Labels**: `database`, `performance`
 
@@ -453,6 +512,7 @@ User data deletion uses sequential queries without transaction. Partial failure 
 Pool monitor expects query timeout configuration but it's not set. Long-running queries can hang indefinitely.
 
 **Acceptance Criteria**:
+
 - [ ] Set `statement_timeout: 30000` (30 seconds)
 - [ ] Add `query_timeout: 30000` to pool config
 - [ ] Log slow queries to Sentry
@@ -460,6 +520,7 @@ Pool monitor expects query timeout configuration but it's not set. Long-running 
 ---
 
 #### Issue #24: Inefficient GDPR Export Query
+
 **Severity**: MEDIUM  
 **Labels**: `database`, `performance`, `gdpr`
 
@@ -467,6 +528,7 @@ Pool monitor expects query timeout configuration but it's not set. Long-running 
 GDPR data export runs 10+ sequential queries. Should parallelize for speed.
 
 **Acceptance Criteria**:
+
 - [ ] Use `Promise.all()` for parallel queries
 - [ ] Target <5 seconds for full export
 - [ ] Add progress indicator for users
@@ -474,6 +536,7 @@ GDPR data export runs 10+ sequential queries. Should parallelize for speed.
 ---
 
 #### Issue #25: DataLoader Fetches Unlimited Reviews
+
 **Severity**: MEDIUM  
 **Labels**: `backend`, `performance`, `memory`  
 **Files**: `backend/utils/dataLoader.js`
@@ -482,6 +545,7 @@ GDPR data export runs 10+ sequential queries. Should parallelize for speed.
 `reviewsByAppId` loader fetches ALL reviews without limit. Apps with 10,000+ reviews cause memory bloat.
 
 **Acceptance Criteria**:
+
 - [ ] Add `LIMIT 100` to review queries
 - [ ] Implement pagination for reviews
 - [ ] Add "Load More" button in UI
@@ -491,6 +555,7 @@ GDPR data export runs 10+ sequential queries. Should parallelize for speed.
 ### Configuration Issues (26-33)
 
 #### Issue #26: Source Maps Exposed in Production
+
 **Severity**: MEDIUM  
 **Labels**: `frontend`, `security`, `build`  
 **Files**: `vite.config.js:13`
@@ -499,6 +564,7 @@ GDPR data export runs 10+ sequential queries. Should parallelize for speed.
 Source maps disabled instead of using hidden source maps. Makes production debugging impossible.
 
 **Acceptance Criteria**:
+
 - [ ] Set `sourcemap: 'hidden'` for production
 - [ ] Upload source maps to Sentry
 - [ ] Verify maps not publicly accessible
@@ -506,6 +572,7 @@ Source maps disabled instead of using hidden source maps. Makes production debug
 ---
 
 #### Issue #27: No `.env.example` Files
+
 **Severity**: HIGH  
 **Labels**: `config`, `documentation`
 
@@ -513,6 +580,7 @@ Source maps disabled instead of using hidden source maps. Makes production debug
 No template files to document required environment variables. New developers don't know what to configure.
 
 **Acceptance Criteria**:
+
 - [ ] Create `frontend/.env.example`
 - [ ] Create `backend/.env.example`
 - [ ] Document all variables with comments
@@ -521,6 +589,7 @@ No template files to document required environment variables. New developers don
 ---
 
 #### Issue #28-33: [Additional configuration issues]
+
 [Similar format for remaining 5 issues...]
 
 ---
@@ -530,6 +599,7 @@ No template files to document required environment variables. New developers don
 ### Frontend Issues (34-48)
 
 #### Issue #34: Missing PropTypes/Type Validation
+
 **Severity**: HIGH  
 **Labels**: `frontend`, `typescript`, `code-quality`  
 **Files**: All component files
@@ -538,6 +608,7 @@ No template files to document required environment variables. New developers don
 No runtime prop validation. Components crash when receiving unexpected data shapes.
 
 **Acceptance Criteria**:
+
 - [ ] Option A: Add PropTypes to all components
 - [ ] Option B: Migrate to TypeScript (preferred)
 - [ ] Add prop validation to CI checks
@@ -545,6 +616,7 @@ No runtime prop validation. Components crash when receiving unexpected data shap
 ---
 
 #### Issue #35: Unsafe localStorage Access
+
 **Severity**: HIGH  
 **Labels**: `frontend`, `error-handling`  
 **Files**: `src/App.jsx:23-27`
@@ -553,6 +625,7 @@ No runtime prop validation. Components crash when receiving unexpected data shap
 No error handling for localStorage access. Crashes in private browsing mode or when storage quota exceeded.
 
 **Acceptance Criteria**:
+
 - [ ] Wrap all localStorage calls in try-catch
 - [ ] Create `safeLocalStorage()` helper
 - [ ] Test in private browsing mode
@@ -560,6 +633,7 @@ No error handling for localStorage access. Crashes in private browsing mode or w
 ---
 
 #### Issue #36-48: [Additional frontend issues]
+
 [13 more frontend issues...]
 
 ---
@@ -567,6 +641,7 @@ No error handling for localStorage access. Crashes in private browsing mode or w
 ### Backend GraphQL Issues (49-74)
 
 #### Issue #49: N+1 Query in User Reviews
+
 **Severity**: MEDIUM  
 **Labels**: `backend`, `performance`, `n+1`  
 **Files**: `backend/resolvers/users.js:229-234`
@@ -575,6 +650,7 @@ No error handling for localStorage access. Crashes in private browsing mode or w
 Reviews loaded individually per user without DataLoader batching. Leaderboard with 100 users = 101 queries.
 
 **Acceptance Criteria**:
+
 - [ ] Create `reviewsByUserId` DataLoader
 - [ ] Test with 100+ users
 - [ ] Verify single-digit query count
@@ -582,6 +658,7 @@ Reviews loaded individually per user without DataLoader batching. Leaderboard wi
 ---
 
 #### Issue #50-74: [Additional backend issues]
+
 [25 more backend issues...]
 
 ---
@@ -616,6 +693,7 @@ Reviews loaded individually per user without DataLoader batching. Leaderboard wi
 ## How to Create GitHub Issues
 
 ### Option 1: Manual Creation (Recommended for Critical Issues)
+
 1. Go to GitHub repository → Issues → New Issue
 2. Copy title and description from this document
 3. Add appropriate labels
@@ -623,6 +701,7 @@ Reviews loaded individually per user without DataLoader batching. Leaderboard wi
 5. Link to milestone or project
 
 ### Option 2: Bulk Import via GitHub CLI
+
 ```bash
 # Install GitHub CLI
 gh auth login
@@ -632,6 +711,7 @@ gh issue create --title "Issue Title" --body "Description" --label "security,cri
 ```
 
 ### Option 3: Automated Script
+
 ```bash
 # Use issues-import.sh script (to be created)
 ./scripts/issues-import.sh GITHUB_ISSUES_TRACKER.md
@@ -642,6 +722,7 @@ gh issue create --title "Issue Title" --body "Description" --label "security,cri
 ## Issue Templates
 
 ### Critical Security Issue Template
+
 ```markdown
 ## Description
 [Detailed vulnerability description]

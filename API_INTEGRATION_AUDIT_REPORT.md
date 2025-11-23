@@ -1,4 +1,5 @@
 # API Integration Audit Report
+
 **AppWhistler Production - GraphQL/Apollo Client Integration**
 **Date:** November 22, 2025
 **Scope:** Frontend Apollo Client, Backend GraphQL Server, API Integration Patterns
@@ -18,28 +19,33 @@ This audit identifies **28 critical issues** across 8 categories affecting API r
 ### Frontend Issues
 
 #### 1.1 No Error Link in Apollo Client
+
 **File:** `src/apollo/client.js`
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - Apollo Client lacks `onError` link for centralized error handling
 - Network errors and GraphQL errors are not intercepted globally
 - No retry logic for failed requests
 - No logging/monitoring of API failures
 
 **Impact:**
+
 - Silent failures may go unnoticed
 - Users see generic errors without context
 - No automatic recovery from transient failures
 - Difficult to debug production issues
 
 **Current State:**
+
 ```javascript
 // Only has: httpLink, authLink, wsLink, splitLink
 // Missing: errorLink for centralized error handling
 ```
 
 **Recommendation:**
+
 ```javascript
 import { onError } from '@apollo/client/link/error';
 
@@ -70,10 +76,12 @@ const errorLink = onError(({ graphQLErrors, networkError, operation, forward }) 
 ```
 
 #### 1.2 No Error Callbacks in useQuery
+
 **File:** `src/App.jsx` (line 16)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 const { data, loading, error } = useQuery(GET_TRENDING_APPS, {
   variables: { limit: 50 }
@@ -82,11 +90,13 @@ const { data, loading, error } = useQuery(GET_TRENDING_APPS, {
 ```
 
 **Problems:**
+
 - No logging when queries fail
 - No retry or refetch mechanism
 - Error state rendered but not tracked
 
 **Recommendation:**
+
 ```javascript
 const { data, loading, error, refetch, networkStatus } = useQuery(GET_TRENDING_APPS, {
   variables: { limit: 50 },
@@ -102,19 +112,23 @@ const { data, loading, error, refetch, networkStatus } = useQuery(GET_TRENDING_A
 ```
 
 #### 1.3 No Mutation Error Handling
+
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No `useMutation` hooks found in codebase
 - Mutations (login, register, reviews) not implemented in frontend
 - Backend has mutation resolvers but frontend doesn't call them
 
 **Files Missing Mutations:**
+
 - `src/App.jsx` - No authentication flows
 - No components for submitting reviews
 - No user profile management
 
 **Backend Mutations Available (unused):**
+
 - `register`, `login`, `logout` (auth.js)
 - `submitReview` (reviews.js)
 - `createFactCheck`, `verifyFactCheck` (factChecks.js)
@@ -124,15 +138,18 @@ const { data, loading, error, refetch, networkStatus } = useQuery(GET_TRENDING_A
 ## 2. Improper Retry Logic ⚠️ CRITICAL
 
 ### 2.1 No HTTP Retry Policy
+
 **File:** `src/apollo/client.js`
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No retry mechanism for failed HTTP requests
 - Single failed request permanently fails
 - No exponential backoff for transient errors
 
 **Current State:**
+
 ```javascript
 const httpLink = createHttpLink({
   uri: `${HTTP_URI}/graphql`,
@@ -143,6 +160,7 @@ const httpLink = createHttpLink({
 
 **Recommendation:**
 Install `@apollo/client/link/retry` and add:
+
 ```javascript
 import { RetryLink } from '@apollo/client/link/retry';
 
@@ -165,10 +183,12 @@ const retryLink = new RetryLink({
 ```
 
 ### 2.2 WebSocket No Reconnection Limits
+
 **File:** `src/apollo/client.js` (lines 34-47)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 const wsLink = new GraphQLWsLink(
   createClient({
@@ -181,12 +201,14 @@ const wsLink = new GraphQLWsLink(
 ```
 
 **Problems:**
+
 - `shouldRetry: () => true` ignores `retryAttempts`
 - No exponential backoff between retries
 - No connection timeout configured
 - No handling of permanent connection failures
 
 **Recommendation:**
+
 ```javascript
 let wsRetryCount = 0;
 
@@ -224,10 +246,12 @@ const wsLink = new GraphQLWsLink(
 ```
 
 ### 2.3 Backend No Retry for External Services
+
 **Files:** `backend/resolvers/factChecks.js`, `backend/utils/ipfsUpload.js`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Calls to HuggingFace AI API have no retry logic
 - IPFS uploads fail permanently on network hiccups
 - Blockchain transactions not retried
@@ -237,10 +261,12 @@ const wsLink = new GraphQLWsLink(
 ## 3. Missing Loading States ⚠️ MEDIUM
 
 ### 3.1 No Network Status Differentiation
+
 **File:** `src/App.jsx` (line 16)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 const { data, loading, error } = useQuery(GET_TRENDING_APPS, {
   variables: { limit: 50 }
@@ -250,11 +276,13 @@ const { data, loading, error } = useQuery(GET_TRENDING_APPS, {
 ```
 
 **Problems:**
+
 - Cannot distinguish initial load vs refetch vs polling
 - No indication when data is stale but being refreshed
 - `cache-and-network` policy shows cached data but loading stays false
 
 **Recommendation:**
+
 ```javascript
 const { data, loading, error, networkStatus } = useQuery(GET_TRENDING_APPS, {
   variables: { limit: 50 },
@@ -270,9 +298,11 @@ const isFetchingMore = networkStatus === NetworkStatus.fetchMore;
 ```
 
 ### 3.2 No Mutation Loading States
+
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No mutation implementations means no loading states for:
   - Login/registration
   - Submitting reviews
@@ -280,14 +310,17 @@ const isFetchingMore = networkStatus === NetworkStatus.fetchMore;
   - Profile updates
 
 **Impact:**
+
 - Users submit forms multiple times
 - No feedback during async operations
 - Poor UX on slow networks
 
 ### 3.3 Skeleton Loader Not Used Optimally
+
 **File:** `src/App.jsx` (lines 132-139)
 
 **Issue:**
+
 ```javascript
 {loading && (
   <div>
@@ -303,10 +336,12 @@ const isFetchingMore = networkStatus === NetworkStatus.fetchMore;
 ```
 
 **Problem:**
+
 - Shows both spinner AND skeletons (redundant)
 - On refetch with cached data, removes all content
 
 **Recommendation:**
+
 ```javascript
 {isInitialLoading && (
   <div className="grid...">
@@ -326,21 +361,25 @@ const isFetchingMore = networkStatus === NetworkStatus.fetchMore;
 ## 4. Race Conditions in Concurrent Requests ⚠️ MEDIUM
 
 ### 4.1 No Request Deduplication
+
 **File:** `src/apollo/client.js`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Multiple components could trigger same query
 - Apollo's default deduplication is not explicitly configured
 - No request cancellation on component unmount
 
 **Risk Scenario:**
+
 1. User rapidly changes filters
 2. Multiple `apps` queries fired in sequence
 3. Earlier slow query completes after later fast query
 4. UI shows stale data
 
 **Recommendation:**
+
 ```javascript
 const client = new ApolloClient({
   link: splitLink,
@@ -357,6 +396,7 @@ const client = new ApolloClient({
 ```
 
 Add abort controller for search queries:
+
 ```javascript
 const [searchQuery, setSearchQuery] = useState('');
 const abortControllerRef = useRef(null);
@@ -379,17 +419,20 @@ useEffect(() => {
 ```
 
 ### 4.2 Backend Concurrent Query Risks
+
 **File:** `backend/utils/dataLoader.js`
 **Severity:** 🟢 Low
 
 **Status:** ✅ Mitigated by DataLoader batching
 
 **Analysis:**
+
 - DataLoader batches concurrent requests within same event loop tick
 - `maxBatchSize: 100` prevents memory issues
 - Cache prevents duplicate queries within request
 
 **Remaining Risk:**
+
 - Cache never expires during request lifetime
 - Could serve stale data if mutations occur mid-request
 
@@ -398,10 +441,12 @@ useEffect(() => {
 ## 5. Stale Data Issues ⚠️ MEDIUM
 
 ### 5.1 Cache Policy Too Aggressive
+
 **File:** `src/apollo/client.js` (lines 90-102)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 defaultOptions: {
   watchQuery: {
@@ -417,16 +462,19 @@ defaultOptions: {
 ```
 
 **Problems:**
+
 - `cache-first` means initial page load never hits network if cache exists
 - User might see outdated truth ratings, verification status
 - Trending apps list could be hours old
 
 **Scenarios:**
+
 1. User visits site → sees cached apps from yesterday
 2. Admin verifies app → users don't see verification badge until manual refresh
 3. Truth rating changes → not reflected until cache expires
 
 **Recommendation:**
+
 ```javascript
 query: {
   fetchPolicy: 'cache-and-network',  // Always check network
@@ -436,6 +484,7 @@ query: {
 ```
 
 Or add TTL to cache:
+
 ```javascript
 cache: new InMemoryCache({
   typePolicies: {
@@ -462,19 +511,23 @@ cache: new InMemoryCache({
 ```
 
 ### 5.2 No Cache Time-to-Live (TTL)
+
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Frontend cache has no expiration
 - Backend Redis cache uses TTL but frontend doesn't respect it
 - User could see data from previous session
 
 **Files:**
+
 - `backend/utils/cacheManager.js` - Sets TTL (300-3600s)
 - `src/apollo/client.js` - No TTL implementation
 
 **Recommendation:**
 Add cache persistence with TTL:
+
 ```javascript
 import { persistCacheSync, LocalStorageWrapper } from 'apollo3-cache-persist';
 
@@ -489,10 +542,12 @@ persistCacheSync({
 ```
 
 ### 5.3 Backend Cache Not Invalidated on Mutations
+
 **Files:** `backend/resolvers/apps.js`, `backend/resolvers/factChecks.js`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 // apps.js - Caches filtered queries
 await cacheManager.set(cacheKey, response, 600); // 10 min cache
@@ -504,11 +559,13 @@ await cacheManager.set(cacheKey, response, 600); // 10 min cache
 ```
 
 **Impact:**
+
 - User submits review → app's rating not updated for 10 minutes
 - Admin verifies app → "Verified" badge doesn't appear
 - Cache serves stale data after mutations
 
 **Recommendation:**
+
 ```javascript
 // In mutation resolvers
 const cacheManager = require('../utils/cacheManager');
@@ -530,16 +587,19 @@ submitReview: async (_, { input }, context) => {
 ## 6. Cache Invalidation Problems ⚠️ HIGH
 
 ### 6.1 No Cache Eviction Strategy
+
 **File:** `src/apollo/client.js`
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No `cache.evict()` calls anywhere in frontend
 - No `cache.modify()` for optimistic updates
 - No manual cache updates after mutations
 - `clearStore()` only called on logout (aggressive)
 
 **Problems:**
+
 ```javascript
 // On successful login mutation (not implemented):
 // 1. Should update cache with new user data
@@ -555,6 +615,7 @@ export const clearAuth = () => {
 ```
 
 **Recommendation:**
+
 ```javascript
 // Selective cache clearing
 export const clearAuth = async () => {
@@ -585,10 +646,12 @@ const [login] = useMutation(LOGIN_USER, {
 ```
 
 ### 6.2 Pagination Cache Merge Issues
+
 **File:** `src/apollo/client.js` (lines 72-81)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 apps: {
   keyArgs: ['category', 'platform', 'minTruthRating'],
@@ -603,13 +666,15 @@ apps: {
 ```
 
 **Problems:**
+
 - Append-only merge causes duplicates if refetching
 - No duplicate detection by `id`
 - `keyArgs` missing `search` and `offset` → same cache key for different searches
 - Stale data never removed
 
 **Example Bug:**
-```
+
+```text
 1. User searches "news" → cache key: apps:category:news
 2. Gets apps 1-10
 3. User changes filter to "all" → cache key: apps:category:all
@@ -617,6 +682,7 @@ apps: {
 ```
 
 **Recommendation:**
+
 ```javascript
 apps: {
   keyArgs: ['category', 'platform', 'minTruthRating', 'search'],
@@ -648,9 +714,11 @@ apps: {
 ```
 
 ### 6.3 No Cache Warming
+
 **Severity:** 🟢 Low (Optimization)
 
 **Issue:**
+
 - No preloading of critical queries on app start
 - `trendingApps` waits until component mounts
 - Could prefetch during app initialization
@@ -660,15 +728,18 @@ apps: {
 ## 7. WebSocket Connection Handling ⚠️ HIGH
 
 ### 7.1 No Connection State Management
+
 **File:** `src/apollo/client.js`
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No way to detect WebSocket connection state
 - No UI indication of online/offline status
 - No reconnection feedback to user
 
 **Frontend Missing:**
+
 ```javascript
 // No tracking of:
 // - Connected
@@ -683,6 +754,7 @@ wsLink.on('error', () => {...})
 ```
 
 **Recommendation:**
+
 ```javascript
 import { createClient } from 'graphql-ws';
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
@@ -731,10 +803,12 @@ useEffect(() => {
 ```
 
 ### 7.2 Backend WebSocket Not Integrated with GraphQL
+
 **File:** `backend/server.js` (lines 283-311)
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 ```javascript
 // Socket.io server runs separately from GraphQL
 const io = new Server(httpServer, {...});
@@ -754,6 +828,7 @@ subscription OnFactCheckAdded($category: String) {
 ```
 
 **Problems:**
+
 - GraphQL subscriptions defined but not implemented
 - Socket.io uses custom events (not GraphQL)
 - Frontend GraphQL subscriptions won't work
@@ -761,6 +836,7 @@ subscription OnFactCheckAdded($category: String) {
 
 **Recommendation:**
 Option 1: Remove Socket.io, use GraphQL subscriptions only:
+
 ```javascript
 // Replace Socket.io with graphql-ws
 const { useServer } = require('graphql-ws/lib/use/ws');
@@ -782,24 +858,29 @@ useServer({
 ```
 
 Option 2: Keep Socket.io but document it's for non-GraphQL real-time:
+
 - GraphQL subscriptions for query/mutation updates
 - Socket.io for custom events (chat, notifications)
 
 ### 7.3 No Subscription Usage in Frontend
+
 **File:** `src/graphql/queries.js` (lines 214-242)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Subscriptions defined (`FACT_CHECK_ADDED`, `APP_VERIFIED`)
 - But NO `useSubscription` hooks in frontend
 - Real-time features advertised but not implemented
 
 **Files Missing Subscriptions:**
+
 - `src/App.jsx` - Could subscribe to app updates
 - No fact-check live feed component
 - No verification notifications
 
 **Recommendation:**
+
 ```javascript
 import { useSubscription } from '@apollo/client';
 import { FACT_CHECK_ADDED } from './graphql/queries';
@@ -819,10 +900,12 @@ function FactCheckFeed({ category }) {
 ```
 
 ### 7.4 No WebSocket Auth Token Refresh
+
 **File:** `src/apollo/client.js` (lines 36-41)
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 ```javascript
 const wsLink = new GraphQLWsLink(
   createClient({
@@ -838,11 +921,13 @@ const wsLink = new GraphQLWsLink(
 ```
 
 **Problem:**
+
 - If JWT expires while WebSocket is open, subscriptions fail
 - User must reconnect manually
 - No token refresh mechanism
 
 **Recommendation:**
+
 ```javascript
 connectionParams: async () => {
   let token = localStorage.getItem('appwhistler_token');
@@ -865,16 +950,19 @@ connectionParams: async () => {
 ## 8. Network Error Recovery ⚠️ HIGH
 
 ### 8.1 No Offline Detection
+
 **Files:** `src/apollo/client.js`, `src/App.jsx`
 **Severity:** 🔴 Critical
 
 **Issue:**
+
 - No `navigator.onLine` checks
 - No offline indicators in UI
 - Queries fail silently when offline
 - No queue for offline mutations
 
 **Recommendation:**
+
 ```javascript
 // In App.jsx
 const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -901,6 +989,7 @@ useEffect(() => {
 ```
 
 Add offline link:
+
 ```javascript
 import { ApolloLink, Observable } from '@apollo/client';
 
@@ -916,15 +1005,18 @@ const offlineLink = new ApolloLink((operation, forward) => {
 ```
 
 ### 8.2 No Timeout Configuration
+
 **File:** `src/apollo/client.js`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - No request timeout set
 - Slow queries can hang indefinitely
 - No way to cancel long-running requests
 
 **Recommendation:**
+
 ```javascript
 const httpLink = createHttpLink({
   uri: `${HTTP_URI}/graphql`,
@@ -942,14 +1034,17 @@ const httpLink = createHttpLink({
 ```
 
 ### 8.3 No Network Status Polling
+
 **Severity:** 🟢 Low (Enhancement)
 
 **Issue:**
+
 - Could implement health check polling
 - Detect backend unavailability proactively
 - Show maintenance mode UI
 
 **Recommendation:**
+
 ```javascript
 const { data: healthStatus } = useQuery(HEALTH_CHECK_QUERY, {
   pollInterval: 60000, // Check every minute
@@ -962,15 +1057,18 @@ const { data: healthStatus } = useQuery(HEALTH_CHECK_QUERY, {
 ```
 
 ### 8.4 Backend Error Responses Not Standardized
+
 **Files:** Various backend resolvers
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Some resolvers use `createGraphQLError` (good)
 - Some throw generic errors (bad)
 - Inconsistent error codes
 
 **Example Issues:**
+
 ```javascript
 // ✅ Good:
 throw createGraphQLError('User not found', 'NOT_FOUND');
@@ -984,6 +1082,7 @@ return { success: false, error: 'Failed' }; // Not a GraphQL error
 
 **Recommendation:**
 Enforce error handling wrapper:
+
 ```javascript
 // All resolvers should use withErrorHandling
 module.exports = {
@@ -1000,14 +1099,17 @@ module.exports = {
 ## 9. Additional Critical Findings
 
 ### 9.1 No Request Deduplication Keys
+
 **File:** `src/graphql/queries.js`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - GraphQL queries don't use `@connection` directive
 - Apollo can't deduplicate paginated queries properly
 
 **Recommendation:**
+
 ```graphql
 query SearchApps(...) @connection(key: "apps") {
   apps(search: $search, ...) {
@@ -1018,15 +1120,18 @@ query SearchApps(...) @connection(key: "apps") {
 ```
 
 ### 9.2 No Sentry Integration in Frontend
+
 **File:** `src/main.jsx`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Backend has Sentry (`backend/server.js`)
 - Frontend imports Sentry DSN but doesn't initialize
 - API errors not tracked in production
 
 **Recommendation:**
+
 ```javascript
 // In src/main.jsx
 import * as Sentry from '@sentry/react';
@@ -1046,15 +1151,18 @@ if (import.meta.env.VITE_SENTRY_DSN) {
 ```
 
 ### 9.3 No Rate Limit Handling
+
 **Files:** `src/apollo/client.js`, `src/App.jsx`
 **Severity:** 🟡 Medium
 
 **Issue:**
+
 - Backend rate limits requests (429 errors)
 - Frontend doesn't handle 429 responses
 - No backoff or retry-after header respect
 
 **Recommendation:**
+
 ```javascript
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (networkError?.statusCode === 429) {
@@ -1071,13 +1179,16 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 ## 10. Performance Issues
 
 ### 10.1 No Query Batching
+
 **Severity:** 🟢 Low (Optimization)
 
 **Issue:**
+
 - Multiple queries could be batched into single HTTP request
 - Apollo Client supports batching but not configured
 
 **Recommendation:**
+
 ```javascript
 import { BatchHttpLink } from '@apollo/client/link/batch-http';
 
@@ -1089,9 +1200,11 @@ const batchLink = new BatchHttpLink({
 ```
 
 ### 10.2 No Persisted Queries
+
 **Severity:** 🟢 Low (Optimization)
 
 **Issue:**
+
 - Full GraphQL queries sent in every request
 - Large query strings increase bandwidth
 - Could use automatic persisted queries (APQ)
@@ -1113,6 +1226,7 @@ const batchLink = new BatchHttpLink({
 ## Recommended Priority Fixes
 
 ### Phase 1: Critical (Week 1)
+
 1. **Add Error Link** - Centralized error handling with logging
 2. **Implement Retry Logic** - RetryLink for HTTP, proper WebSocket retry
 3. **Add Mutation Handling** - Complete login/register/review flows
@@ -1121,7 +1235,8 @@ const batchLink = new BatchHttpLink({
 6. **Integrate WebSocket with GraphQL** - Remove dual WebSocket systems
 
 ### Phase 2: High Priority (Week 2)
-7. **Fix Cache Policy** - Change to `cache-and-network`
+
+7.**Fix Cache Policy** - Change to `cache-and-network`
 8. **Add Connection State UI** - Show online/offline status
 9. **Implement Subscriptions** - Use defined GraphQL subscriptions
 10. **Add Timeout Configuration** - 30s request timeout
@@ -1129,34 +1244,39 @@ const batchLink = new BatchHttpLink({
 12. **Add Cache Invalidation** - Clear on mutations
 
 ### Phase 3: Medium Priority (Week 3)
-13. **Add Loading States** - Network status differentiation
+
+13.**Add Loading States** - Network status differentiation
 14. **Setup Sentry Frontend** - Error tracking in production
 15. **Add Rate Limit Handling** - Respect 429 responses
 16. **Add Cache TTL** - Expire stale data
 17. **Add WebSocket Auth Refresh** - Handle token expiration
 
 ### Phase 4: Enhancements (Week 4)
-18. **Add Query Batching** - Reduce HTTP requests
-19. **Add Persisted Queries** - Reduce bandwidth
-20. **Add Health Check Polling** - Proactive downtime detection
+
+18.**Add Query Batching** - Reduce HTTP requests
+19.**Add Persisted Queries** - Reduce bandwidth
+20.**Add Health Check Polling** - Proactive downtime detection
 
 ---
 
 ## Testing Requirements
 
 ### Unit Tests Needed
+
 - Apollo Client link chain
 - Error handlers
 - Cache merge functions
 - Offline detection
 
 ### Integration Tests Needed
+
 - Full query/mutation flows
 - WebSocket subscriptions
 - Retry mechanisms
 - Cache invalidation
 
 ### E2E Tests Needed
+
 - Offline scenarios
 - Network interruption recovery
 - Token expiration handling
@@ -1167,6 +1287,7 @@ const batchLink = new BatchHttpLink({
 ## Monitoring Recommendations
 
 ### Metrics to Track
+
 - API error rate (by error code)
 - Query latency (p50, p95, p99)
 - Cache hit/miss ratio
@@ -1175,6 +1296,7 @@ const batchLink = new BatchHttpLink({
 - Offline event frequency
 
 ### Alerts to Setup
+
 - Error rate > 5%
 - API latency > 5s
 - WebSocket disconnections > 10/min
@@ -1196,6 +1318,7 @@ The AppWhistler API integration is **functional for basic usage** but lacks prod
 **Estimated effort to fix critical issues:** 2-3 weeks for experienced developer
 
 **Risk if not addressed:** Users will experience:
+
 - Silent errors and confusion
 - Stale data (wrong truth ratings)
 - Failed actions (submissions lost)
