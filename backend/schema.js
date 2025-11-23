@@ -280,6 +280,73 @@ const typeDefs = gql`
     verificationStatus: String!
   }
 
+  # Fake Review Detection types
+  type FakeReviewAnalysis {
+    appId: ID!
+    overallFakeScore: Int!
+    verdict: String!
+    totalReviews: Int!
+    suspiciousReviews: Int!
+    suspiciousRatio: Float!
+    analysis: FakeReviewBreakdown
+    recommendations: [String!]
+  }
+
+  type FakeReviewBreakdown {
+    breakdown: ScoreBreakdown!
+    signals: DetectionSignals!
+    topSuspiciousReviews: [SuspiciousReview!]
+  }
+
+  type ScoreBreakdown {
+    timingPatterns: Int!
+    ratingManipulation: Int!
+    textAnalysis: Int!
+    duplicateDetection: Int!
+    userBehavior: Int!
+    networkAnalysis: Int!
+  }
+
+  type DetectionSignals {
+    timing: TimingSignals!
+    rating: RatingSignals!
+    duplicates: DuplicateSignals!
+    network: NetworkSignals!
+  }
+
+  type TimingSignals {
+    suspiciousBursts: Boolean!
+    coordinatedTiming: Boolean!
+    abnormalVelocity: Boolean!
+    confidence: Int!
+  }
+
+  type RatingSignals {
+    unnaturalDistribution: Boolean!
+    polarization: Boolean!
+    recentManipulation: Boolean!
+    confidence: Int!
+  }
+
+  type DuplicateSignals {
+    exactDuplicates: Int!
+    nearDuplicates: Int!
+    confidence: Int!
+  }
+
+  type NetworkSignals {
+    coordinatedCampaign: Boolean!
+    clusterDetected: Boolean!
+    confidence: Int!
+  }
+
+  type SuspiciousReview {
+    reviewId: ID!
+    fakeScore: Int!
+    verdict: String!
+    redFlags: [RedFlag!]
+  }
+
   # Input types for mutations
   input RegisterInput {
     username: String!
@@ -339,6 +406,10 @@ const typeDefs = gql`
 
     # Extension support - analyze any URL for truth rating
     analyzeUrl(url: String!): UrlAnalysisResult!
+
+    # Fake Review Detection - Multi-layer AI analysis
+    detectFakeReviews(appId: ID!): FakeReviewAnalysis!
+    analyzeSingleReview(reviewId: ID!): SuspiciousReview!
 
     # Fact Checks
     factChecks(

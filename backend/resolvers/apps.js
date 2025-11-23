@@ -2,6 +2,10 @@
 const cacheManager = require('../utils/cacheManager');
 const { getField } = require('./helpers');
 const { withErrorHandling } = require('../utils/errorHandler');
+const {
+  analyzeSingleReview: analyzeSingleReviewUtil,
+  analyzeAppReviews
+} = require('../utils/fakeReviewDetector');
 
 module.exports = {
   Query: {
@@ -304,6 +308,85 @@ module.exports = {
             verificationStatus: 'ERROR'
           }
         };
+      }
+    },
+
+    // Fake Review Detection - Analyze all reviews for an app
+    detectFakeReviews: async (_, { appId }, context) => {
+      try {
+        // Fetch all reviews for the app
+        const result = await context.pool.query(
+          `SELECT r.*, u.created_at as user_created_at,
+           (SELECT COUNT(*) FROM reviews WHERE user_id = r.user_id) as user_total_reviews,
+           (SELECT COUNT(DISTINCT app_id) FROM reviews WHERE user_id = r.user_id) as user_reviewed_apps_count
+           FROM reviews r
+           LEFT JOIN users u ON r.user_id = u.id
+           WHERE r.app_id = $1
+           ORDER BY r.created_at DESC`,
+          [appId]
+        );
+
+        const reviews = result.rows;
+
+        if (reviews.length === 0) {
+          return {
+            appId,
+            overallFakeScore: 0,
+            verdict: 'NO_REVIEWS',
+            totalReviews: 0,
+            suspiciousReviews: 0,
+            suspiciousRatio: 0,
+            analysis: null,
+            recommendations: ['No reviews to analyze']
+          };
+        }
+
+        // Run full analysis
+        const analysis = await analyzeAppReviews(appId, reviews);
+
+        return analysis;
+
+      } catch (error) {
+        console.error('[detectFakeReviews] Error:', error);
+        throw new Error(`Failed to analyze reviews: ${error.message}`);
+      }
+    },
+
+    // Analyze a single review for fake signals
+    analyzeSingleReview: async (_, { reviewId }, context) => {
+      try {
+        // Fetch the review with user context
+        const result = await context.pool.query(
+          `SELECT r.*, u.created_at as user_created_at,
+           (SELECT COUNT(*) FROM reviews WHERE user_id = r.user_id) as total_reviews,
+           (SELECT COUNT(DISTINCT app_id) FROM reviews WHERE user_id = r.user_id) as reviewed_apps
+           FROM reviews r
+           LEFT JOIN users u ON r.user_id = u.id
+           WHERE r.id = $1`,
+          [reviewId]
+        );
+
+        if (result.rows.length === 0) {
+          throw new Error('Review not found');
+        }
+
+        const review = result.rows[0];
+
+        // Prepare user history context
+        const userHistory = {
+          created_at: review.user_created_at,
+          total_reviews: review.total_reviews || 0,
+          reviewed_apps: review.reviewed_apps || 0
+        };
+
+        // Analyze
+        const analysis = await analyzeSingleReviewUtil(review, { userHistory });
+
+        return analysis;
+
+      } catch (error) {
+        console.error('[analyzeSingleReview] Error:', error);
+        throw new Error(`Failed to analyze review: ${error.message}`);
       }
     },
 
