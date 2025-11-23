@@ -21,14 +21,16 @@ AppWhistler is a truth-first app recommender with AI-powered fact-checking. This
 - **N+1 Prevention**: `utils/dataLoader.js` implements BatchLoader pattern for efficient database queries
 - **Job Queues**: `queues/jobManager.js` uses BullMQ with Redis (falls back to in-memory if Redis unavailable)
 
-### Critical Configuration Pattern: Missing `config/secrets`
-**IMPORTANT**: All backend files import `require('../../config/secrets')` or `require('../config/secrets')` but this directory/module **DOES NOT EXIST** in the codebase. This is a **broken import pattern** that will cause runtime errors. The module is expected to export:
+### Configuration Pattern: `config/secrets`
+**IMPORTANT**: Backend files import `require('../../config/secrets')` or `require('../config/secrets')` for centralized environment variable management. The module (`config/secrets.js`, 175 lines) exports:
 ```javascript
-{ loadSecrets, getSecret, requireSecret, getNumber, getArray, getDatabaseConfig }
+{ loadSecrets, getSecret, getNumber, getBoolean, getArray, getDatabaseConfig, validateSecrets }
 ```
-Currently used in: `server.js`, `resolvers.js`, `auth.js`, `envValidator.js`, `email.js`, `cacheManager.js`, and 6+ other files.
-
-**Workaround**: Create `config/secrets.js` that wraps `process.env` or refactor all imports to use `dotenv` directly. Likely intention was centralized env variable access with defaults/validation.
+- **Purpose**: Centralized env variable access with defaults, caching, and AWS Secrets Manager compatibility
+- **Current**: Loads from `.env` file via `dotenv`
+- **Production-ready**: Designed to swap to AWS Secrets Manager with minimal code changes
+- **Features**: 5-minute cache TTL, type conversion (string/number/boolean/array), validation on startup
+- **Used in**: `server.js`, `resolvers.js`, and all backend middleware/utilities
 
 ## Development Workflow
 
@@ -45,8 +47,8 @@ node server.js    # Or npm start if configured
 
 **Prerequisites**:
 1. PostgreSQL database running (see DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD env vars)
-2. Create `config/secrets.js` module or refactor imports to use `dotenv` directly
-3. Run database migrations (schema not provided in workspace, inferred from GraphQL types)
+2. Configure `.env` file in project root (see Environment Variables section)
+3. Run database initialization: `cd database && node init.js`
 
 ### Environment Variables
 Frontend (Vite - prefix with `VITE_`):
@@ -149,21 +151,50 @@ GraphQL:
 - Wrap DB operations in `safeDatabaseOperation(fn)` for automatic error handling
 - Sentry captures exceptions if DSN configured
 
+## Testing Infrastructure
+
+### Frontend Tests (Vitest + Playwright)
+- **Unit tests**: `npm test` - Vitest with jsdom environment
+- **Watch mode**: `npm run test:watch` - Auto-run tests on file changes
+- **Coverage**: `npm run test:coverage` - Generates coverage reports (70% threshold)
+- **Test location**: `src/**/*.{test,spec}.{js,jsx}` (example: `src/App.test.jsx`)
+- **E2E tests**: `npm run test:e2e` - Playwright browser tests in `e2e/` directory
+- **E2E UI mode**: `npm run test:e2e:ui` - Interactive Playwright test runner
+- **Setup**: `tests/setup.js` configures jsdom globals
+- **Note**: Some frontend unit tests may have pre-existing failures (component import issues) - not your responsibility to fix unless related to your changes
+
+### Backend Tests (Jest)
+- **Unit tests**: `cd backend && npm test` - Jest test runner (58 tests pass)
+- **Watch mode**: `cd backend && npm run test:watch`
+- **Coverage**: `cd backend && npm run test:coverage`
+- **Test location**: `backend/tests/**/*.test.js` (validation, sanitization utilities)
+- **Config**: `backend/jest.config.js`
+- **Note**: One test suite (`sanitizer.test.js`) has missing dependency (`sanitize-html`) - not your responsibility unless you're working on sanitization
+
+### Build Commands
+- **Frontend build**: `npm run build` - Vite production build to `dist/`
+- **Frontend preview**: `npm run preview` - Test production build locally
+- **Backend**: No build step (Node.js runs directly)
+
+### Linting
+- **No linters configured**: Project does not have ESLint or Prettier setup
+- Follow existing code style when making changes
+
 ## Known Issues & Gotchas
 
-1. **BROKEN IMPORTS**: `config/secrets` module doesn't exist - all backend files will fail at runtime
-2. **Missing migrations**: Database schema must match GraphQL types in `schema.js` but no migration files exist
-3. **Dual package.json**: Frontend has `package.json`, backend likely has separate one (not in workspace view)
-4. **Apollo fully integrated**: Frontend uses Apollo Client with GraphQL queries (not mock data as previously documented)
-5. **WebSocket port coordination**: Both frontend dev server and backend use WebSockets - ensure `VITE_WS_URL` points to backend
-6. **No tests**: Zero test files - no Jest/Vitest/Cypress setup
+1. **No linting tools**: ESLint/Prettier not configured - follow existing code patterns
+2. **Database initialization**: Must run `database/init.js` to create schema (no migration system)
+3. **Dual package.json**: Frontend and backend have separate `package.json` files
+4. **WebSocket port coordination**: Both frontend dev server and backend use WebSockets - ensure `VITE_WS_URL` points to backend (port 5000)
+5. **Redis optional**: Background jobs fall back to in-memory queue if Redis not configured
 
 ## Troubleshooting
 
 ### Backend won't start
 - Check PostgreSQL is running: `psql -U <DB_USER> -d <DB_NAME> -h <DB_HOST>`
-- Verify `config/secrets.js` exists or refactor to use `dotenv`
-- Run `backend/utils/envValidator.js` standalone to check config
+- Verify `.env` file exists in project root with required variables
+- Check `config/secrets.js` validation: it will throw error on startup if required secrets missing
+- Common missing vars: `JWT_SECRET`, `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`
 
 ### Frontend can't connect to backend
 - Confirm backend is on port 5000: `curl http://localhost:5000/health`
@@ -173,3 +204,30 @@ GraphQL:
 ### Job queue failures
 - Redis optional: If `REDIS_URL` not set, jobs run in-memory (dev mode)
 - Check worker registration: `registerWorker(queueName, handler)` must be called before adding jobs
+
+## Best Practices for AI Assistants
+
+### Learning the Codebase
+When working on this repository, use the `store_memory` tool to save important patterns for future sessions:
+- **Coding conventions**: Single-file React components, parameterized SQL queries, GraphQL error formatting
+- **Build commands**: Verified working build/test commands after first successful run
+- **Common patterns**: Authentication flow, DataLoader usage, job queue patterns
+- **Gotchas**: Things that are non-obvious and could cause bugs (e.g., Redis fallback behavior)
+
+Examples of good facts to store:
+- "Always use parameterized queries like `pool.query('SELECT * FROM users WHERE id = $1', [userId])` to prevent SQL injection"
+- "Frontend build: `npm run build`, Backend tests: `cd backend && npm test`, E2E tests: `npm run test:e2e`"
+- "Use `createGraphQLError(message, code)` from `utils/errorHandler.js` for consistent GraphQL error responses"
+
+### Making Changes
+1. **Test first**: Run existing tests to understand baseline behavior
+2. **Minimal changes**: Modify only what's necessary to fix the issue
+3. **Test incrementally**: Build and test after each logical change
+4. **Document patterns**: Store new conventions learned during development
+5. **Check security**: Use `gh-advisory-database` for dependency changes
+
+### Testing Strategy
+1. Run frontend tests: `npm test` (should complete in ~10 seconds)
+2. Run backend tests: `cd backend && npm test` (validates utilities)
+3. Run E2E tests: `npm run test:e2e` (full integration, slower)
+4. Before committing: `npm run build` to verify production build works
