@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppWhistler - Truth-First App Discovery</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    <script>
+        const { useState } = React;
+        const MOCK_APPS = [
+            { id: 1, name: "Facebook", description: "Connect with friends and the world around you on Facebook", truthRating: 68, category: "social", isVerified: true, icon: "📘" },
+            { id: 2, name: "Google", description: "Search the world's information including webpages, images, videos and more", truthRating: 92, category: "research", isVerified: true, icon: "🔍" },
+            { id: 3, name: "Twitter", description: "Join the conversation and see what's happening in the world right now", truthRating: 64, category: "news", isVerified: true, icon: "🐦" },
+            { id: 4, name: "LinkedIn", description: "Connect with professionals, find jobs, and grow your career", truthRating: 88, category: "social", isVerified: true, icon: "💼" },
+            { id: 5, name: "WhatsApp", description: "Simple, reliable, private messaging and calling for free", truthRating: 85, category: "social", isVerified: true, icon: "💬" },
+            { id: 6, name: "Instagram", description: "Create and share photos, stories, and reels with friends", truthRating: 71, category: "social", isVerified: true, icon: "📷" }
+        ];
+
+        function App() {
+            return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-slate-100 p-8" },
+                React.createElement('div', { className: "max-w-7xl mx-auto" },
+                    React.createElement('header', { className: "text-center mb-12" },
+                        React.createElement('h1', { className: "text-6xl font-black mb-4 bg-gradient-to-r from-blue-600 via-sky-500 to-cyan-500 bg-clip-text text-transparent" }, "AppWhistler"),
+                        React.createElement('p', { className: "text-xl text-slate-600" }, "Truth-First App Discovery")
+                    ),
+                    React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" },
+                        ...MOCK_APPS.map(app => 
+                            React.createElement('div', { 
+                                key: app.id,
+                                className: "bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all border-2 border-slate-200"
+                            },
+                                React.createElement('div', { className: "flex items-center gap-4 mb-4" },
+                                    React.createElement('div', { className: "text-4xl" }, app.icon),
+                                    React.createElement('h3', { className: "text-2xl font-bold text-slate-800" }, app.name)
+                                ),
+                                React.createElement('p', { className: "text-slate-600 mb-4 text-sm" }, app.description),
+                                React.createElement('div', { className: "flex items-center justify-between" },
+                                    React.createElement('span', { className: "text-xs font-bold text-slate-500" }, "Truth Score"),
+                                    React.createElement('span', { className: "text-3xl font-black text-slate-800" }, app.truthRating + "%")
+                                ),
+                                React.createElement('div', { className: "w-full h-2 bg-slate-200 rounded-full mt-2 overflow-hidden" },
+                                    React.createElement('div', { 
+                                        className: "h-full bg-gradient-to-r from-sky-500 to-blue-600 rounded-full",
+                                        style: { width: app.truthRating + '%' }
+                                    })
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
+    </script>
+</body>
+</html>
