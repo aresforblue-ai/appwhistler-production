@@ -56,7 +56,7 @@ class APIKeyManager {
         [userId, keyHash, apiKey.substring(0, 12), tier, name]
       );
 
-      console.log(`✅ API key generated for user ${userId} (${tier})`);
+      logger.info(`✅ API key generated for user ${userId} (${tier})`);
 
       // Return the plain key only once (user must save it)
       return {
@@ -69,7 +69,7 @@ class APIKeyManager {
         limits: this.rateLimits[tier]
       };
     } catch (error) {
-      console.error('API key generation failed:', error);
+      logger.error('API key generation failed:', error);
       throw createGraphQLError('Failed to generate API key', 'INTERNAL_SERVER_ERROR');
     }
   }
@@ -149,7 +149,7 @@ class APIKeyManager {
       if (error.extensions?.code) {
         throw error; // Re-throw GraphQL errors
       }
-      console.error('API key validation failed:', error);
+      logger.error('API key validation failed:', error);
       throw createGraphQLError('API key validation failed', 'INTERNAL_SERVER_ERROR');
     }
   }
@@ -204,7 +204,7 @@ class APIKeyManager {
       throw createGraphQLError('API key not found', 'NOT_FOUND');
     }
 
-    console.log(`🔒 API key revoked: ${keyId}`);
+    logger.info(`🔒 API key revoked: ${keyId}`);
     return true;
   }
 
@@ -259,7 +259,7 @@ class APIKeyManager {
       [newTier, userId]
     );
 
-    console.log(`⬆️  Upgraded ${result.rows.length} API keys to ${newTier} for user ${userId}`);
+    logger.info(`⬆️  Upgraded ${result.rows.length} API keys to ${newTier} for user ${userId}`);
     return result.rows.length;
   }
 }

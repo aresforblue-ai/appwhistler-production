@@ -153,7 +153,7 @@ module.exports = {
         return result.rows;
       } catch (error) {
         if (error.code === '42P01') {
-          console.warn('⚠️ fact_check_appeals table not found');
+          logger.warn('⚠️ fact_check_appeals table not found');
           return [];
         }
         throw error;
@@ -170,7 +170,7 @@ module.exports = {
         return result.rows[0] || null;
       } catch (error) {
         if (error.code === '42P01') {
-          console.warn('⚠️ fact_check_appeals table not found');
+          logger.warn('⚠️ fact_check_appeals table not found');
           return null;
         }
         throw error;
@@ -332,9 +332,9 @@ module.exports = {
             [upvoteDelta, downvoteDelta, id]
           );
 
-          console.log(`✅ Vote recorded: User ${userId} voted ${vote > 0 ? 'upvote' : 'downvote'} on fact-check ${id}`);
+          logger.info(`✅ Vote recorded: User ${userId} voted ${vote > 0 ? 'upvote' : 'downvote'} on fact-check ${id}`);
         } else {
-          console.log(`ℹ️ No change: User ${userId} already voted ${vote > 0 ? 'upvote' : 'downvote'} on fact-check ${id}`);
+          logger.info(`ℹ️ No change: User ${userId} already voted ${vote > 0 ? 'upvote' : 'downvote'} on fact-check ${id}`);
         }
 
         // Commit transaction
@@ -350,7 +350,7 @@ module.exports = {
       } catch (error) {
         // Rollback on any error
         await context.pool.query('ROLLBACK');
-        console.error('Vote fact-check error:', error);
+        logger.error('Vote fact-check error:', error);
         throw error;
       }
     }),
@@ -395,7 +395,7 @@ module.exports = {
         [userId, 'verify_fact_check', JSON.stringify({ fact_check_id: id })]
       );
 
-      console.log(`✅ Fact-check ${id} verified by user ${userId}`);
+      logger.info(`✅ Fact-check ${id} verified by user ${userId}`);
       return result.rows[0];
     },
 
@@ -418,7 +418,7 @@ module.exports = {
         [userId, 'reject_fact_check', JSON.stringify({ fact_check_id: id, reason: reason || 'No reason provided' })]
       );
 
-      console.log(`❌ Fact-check ${id} rejected by user ${userId}: ${reason || 'No reason provided'}`);
+      logger.info(`❌ Fact-check ${id} rejected by user ${userId}: ${reason || 'No reason provided'}`);
       return true;
     },
 
@@ -470,7 +470,7 @@ module.exports = {
           ]
         );
 
-        console.log(`✅ Fact-check appeal submitted: ${result.rows[0].id}`);
+        logger.info(`✅ Fact-check appeal submitted: ${result.rows[0].id}`);
 
         // Broadcast appeal to moderators
         if (global.broadcastAppeal) {
@@ -481,7 +481,7 @@ module.exports = {
       } catch (error) {
         // If table doesn't exist, return mock object for now
         if (error.code === '42P01') {
-          console.warn('⚠️ fact_check_appeals table not found, returning mock object');
+          logger.warn('⚠️ fact_check_appeals table not found, returning mock object');
           return {
             id: `mock-appeal-${Date.now()}`,
             fact_check_id: factCheckId,
@@ -552,9 +552,9 @@ module.exports = {
             [newVerdict, appeal.fact_check_id]
           );
 
-          console.log(`✅ Appeal approved and fact-check verdict updated to: ${newVerdict}`);
+          logger.info(`✅ Appeal approved and fact-check verdict updated to: ${newVerdict}`);
         } else {
-          console.log(`✅ Appeal ${status}: ${appealId}`);
+          logger.info(`✅ Appeal ${status}: ${appealId}`);
         }
 
         // Award reputation bonus to appellant if approved
@@ -576,7 +576,7 @@ module.exports = {
       } catch (error) {
         // If table doesn't exist, return mock object for now
         if (error.code === '42P01') {
-          console.warn('⚠️ fact_check_appeals table not found, returning mock object');
+          logger.warn('⚠️ fact_check_appeals table not found, returning mock object');
           return {
             id: appealId,
             status: approved ? 'approved' : 'rejected',

@@ -9,6 +9,7 @@
  */
 
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 // Check-up API endpoint (deployed separately)
 const CHECKUP_ENDPOINT = process.env.CHECKUP_ENDPOINT || 'http://localhost:5004/scrape';
@@ -48,11 +49,11 @@ async function scrapeWithCheckup(url, options = {}) {
       }
     };
   } catch (error) {
-    console.error('[Check-up Integration] Scraping failed:', error.message);
+    logger.error('[Check-up Integration] Scraping failed:', error.message);
 
     // Fallback to basic pattern matching
     if (options.allowFallback !== false) {
-      console.log('[Check-up Integration] Using fallback pattern matcher');
+      logger.info('[Check-up Integration] Using fallback pattern matcher');
       return scrapeWithFallback(url);
     }
 
@@ -136,7 +137,7 @@ async function scrapeWithFallback(url) {
       }
     };
   } catch (error) {
-    console.error('[Check-up Fallback] Failed to scrape URL:', error.message);
+    logger.error('[Check-up Fallback] Failed to scrape URL:', error.message);
     return {
       hasMisinfo: false,
       disinfoScore: 0,
@@ -209,7 +210,7 @@ async function analyzeWithCheckup(url, metadata = {}) {
       redFlags: generateCheckupRedFlags(result)
     };
   } catch (error) {
-    console.error('[Check-up Integration] Analysis failed:', error.message);
+    logger.error('[Check-up Integration] Analysis failed:', error.message);
     return null;
   }
 }

@@ -1,4 +1,5 @@
 // App-related resolvers
+const logger = require('../utils/logger');
 const cacheManager = require('../utils/cacheManager');
 const { getField } = require('./helpers');
 const { withErrorHandling } = require('../utils/errorHandler');
@@ -168,7 +169,7 @@ module.exports = {
           );
           dbApp = result.rows[0];
         } catch (dbError) {
-          console.error('[analyzeUrl] Database query error:', dbError);
+          logger.error('[analyzeUrl] Database query error:', dbError);
         }
 
         // If app found in DB, use real data
@@ -279,7 +280,7 @@ module.exports = {
         };
 
       } catch (error) {
-        console.error('[analyzeUrl] Error:', error);
+        logger.error('[analyzeUrl] Error:', error);
 
         // Return safe fallback on any error
         return {
@@ -347,7 +348,7 @@ module.exports = {
         return analysis;
 
       } catch (error) {
-        console.error('[detectFakeReviews] Error:', error);
+        logger.error('[detectFakeReviews] Error:', error);
         throw new Error(`Failed to analyze reviews: ${error.message}`);
       }
     },
@@ -385,7 +386,7 @@ module.exports = {
         return analysis;
 
       } catch (error) {
-        console.error('[analyzeSingleReview] Error:', error);
+        logger.error('[analyzeSingleReview] Error:', error);
         throw new Error(`Failed to analyze review: ${error.message}`);
       }
     },

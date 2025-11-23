@@ -56,7 +56,7 @@ module.exports = {
       }
 
       const user = result.rows[0];
-      console.log(`✅ Avatar updated for user ${userId}`);
+      logger.info(`✅ Avatar updated for user ${userId}`);
 
       return user;
     },
@@ -138,10 +138,10 @@ module.exports = {
           throw createGraphQLError('User not found', 'NOT_FOUND');
         }
 
-        console.log(`✅ Profile updated for user ${userId}`);
+        logger.info(`✅ Profile updated for user ${userId}`);
         return result.rows[0];
       } catch (error) {
-        console.error('Update profile error:', error);
+        logger.error('Update profile error:', error);
         throw createGraphQLError('Failed to update profile', 'INTERNAL_ERROR');
       }
     }),
@@ -169,10 +169,10 @@ module.exports = {
           throw createGraphQLError('User not found', 'NOT_FOUND');
         }
 
-        console.log(`✅ Preferences updated for user ${userId}`);
+        logger.info(`✅ Preferences updated for user ${userId}`);
         return result.rows[0];
       } catch (error) {
-        console.error('Update preferences error:', error);
+        logger.error('Update preferences error:', error);
         throw createGraphQLError('Failed to update preferences', 'INTERNAL_ERROR');
       }
     },

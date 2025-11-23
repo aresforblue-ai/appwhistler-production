@@ -9,6 +9,7 @@
  */
 
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 // Cofacts GraphQL API endpoint (public, no auth needed)
 const COFACTS_ENDPOINT = process.env.COFACTS_ENDPOINT || 'https://cofacts-api.g0v.tw/graphql';
@@ -102,7 +103,7 @@ async function queryWithCofacts(claimText, options = {}) {
       }
     };
   } catch (error) {
-    console.error('[Cofacts Integration] Query failed:', error.message);
+    logger.error('[Cofacts Integration] Query failed:', error.message);
     throw error;
   }
 }
@@ -204,7 +205,7 @@ async function analyzeWithCofacts(claimTexts, options = {}) {
       redFlags: generateCofactsRedFlags(allArticles, rumorArticles, consensus)
     };
   } catch (error) {
-    console.error('[Cofacts Integration] Analysis failed:', error.message);
+    logger.error('[Cofacts Integration] Analysis failed:', error.message);
     return null;
   }
 }
@@ -308,7 +309,7 @@ async function analyzeAppDescription(appDescription, options = {}) {
     // Extract claims from description
     const claims = extractClaims(appDescription);
 
-    console.log(`[Cofacts] Extracted ${claims.length} claim(s) from app description`);
+    logger.info(`[Cofacts] Extracted ${claims.length} claim(s) from app description`);
 
     // Analyze all claims
     const result = await analyzeWithCofacts(claims, options);
@@ -319,7 +320,7 @@ async function analyzeAppDescription(appDescription, options = {}) {
       claimsAnalyzed: claims.length
     };
   } catch (error) {
-    console.error('[Cofacts Integration] App description analysis failed:', error.message);
+    logger.error('[Cofacts Integration] App description analysis failed:', error.message);
     return null;
   }
 }

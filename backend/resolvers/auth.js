@@ -90,7 +90,7 @@ module.exports = {
 
       // Send welcome email asynchronously (don't block registration)
       sendWelcomeEmail(user.email, user.username, user.truth_score).catch(err => {
-        console.error('Failed to send welcome email:', err.message);
+        logger.error('Failed to send welcome email:', err.message);
       });
 
       return { token, refreshToken, user };
@@ -159,7 +159,7 @@ module.exports = {
             LOCKOUT_MINUTES,
             lockoutUntil.toLocaleString()
           ).catch(err => {
-            console.error('Failed to send lockout email:', err.message);
+            logger.error('Failed to send lockout email:', err.message);
           });
 
           throw createGraphQLError('Account locked after too many attempts. Please try again later.', 'ACCOUNT_LOCKED');

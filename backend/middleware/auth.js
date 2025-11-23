@@ -1,4 +1,5 @@
 // src/backend/middleware/auth.js
+const logger = require('../utils/logger');
 // Complete authentication middleware with JWT and OAuth2
 
 const jwt = require('jsonwebtoken');
@@ -59,7 +60,7 @@ async function authenticateToken(req, res, next) {
     }
 
     // Other errors
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     return res.status(500).json({ error: 'Authentication failed' });
   }
 }
@@ -219,7 +220,7 @@ function calculateTokenTTL(token) {
       return ttl > 0 ? ttl : 604800;
     }
   } catch (error) {
-    console.warn('Error calculating token TTL:', error);
+    logger.warn('Error calculating token TTL:', error);
   }
   // Default to 7 days if unable to calculate
   return 604800;
@@ -237,7 +238,7 @@ async function checkTokenBlacklist(jti) {
     const blacklisted = await cacheManager.get(`blacklist:${jti}`);
     return blacklisted === true || blacklisted === '1';
   } catch (error) {
-    console.error('Error checking token blacklist:', error);
+    logger.error('Error checking token blacklist:', error);
     // On error, fallback to checking in-memory set
     if (!global.tokenBlacklist) {
       global.tokenBlacklist = new Set();
@@ -257,9 +258,9 @@ async function blacklistToken(jti, expirySeconds = 604800) {
   try {
     // Store in cache (Redis or in-memory) with TTL
     await cacheManager.set(`blacklist:${jti}`, true, expirySeconds);
-    console.log(`🔒 Token blacklisted: ${jti} (TTL: ${expirySeconds}s)`);
+    logger.info(`🔒 Token blacklisted: ${jti} (TTL: ${expirySeconds}s)`);
   } catch (error) {
-    console.error('Error blacklisting token:', error);
+    logger.error('Error blacklisting token:', error);
     // Fallback to in-memory set (without TTL)
     if (!global.tokenBlacklist) {
       global.tokenBlacklist = new Set();

@@ -28,7 +28,7 @@ module.exports = {
         return result.rows;
       } catch (error) {
         if (error.code === '42P01') {
-          console.warn('⚠️ blockchain_transactions table not found');
+          logger.warn('⚠️ blockchain_transactions table not found');
           return [];
         }
         throw error;
@@ -45,7 +45,7 @@ module.exports = {
         return result.rows[0] || null;
       } catch (error) {
         if (error.code === '42P01') {
-          console.warn('⚠️ blockchain_transactions table not found');
+          logger.warn('⚠️ blockchain_transactions table not found');
           return null;
         }
         throw error;
@@ -83,12 +83,12 @@ module.exports = {
           [userId, hash, type, status, factCheckId || null, description || null]
         );
 
-        console.log(`✅ Blockchain transaction recorded: ${hash} (${type})`);
+        logger.info(`✅ Blockchain transaction recorded: ${hash} (${type})`);
         return result.rows[0];
       } catch (error) {
         // If table doesn't exist, return mock object for now
         if (error.code === '42P01') {
-          console.warn('⚠️ blockchain_transactions table not found, returning mock object');
+          logger.warn('⚠️ blockchain_transactions table not found, returning mock object');
           return {
             id: `mock-${Date.now()}`,
             user_id: userId,

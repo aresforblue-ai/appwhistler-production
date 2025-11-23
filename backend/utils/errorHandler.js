@@ -96,7 +96,7 @@ async function safeDatabaseOperation(operation, operationName = 'Database Operat
     if (logger) {
       logger.error(errorMessage, { error, operation: operationName });
     } else {
-      console.error(errorMessage);
+      logger.error(errorMessage);
     }
     
     // Don't expose internal details to client
@@ -121,7 +121,7 @@ function withErrorHandling(resolver) {
         throw error;
       }
       
-      console.error('Resolver error:', {
+      logger.error('Resolver error:', {
         resolver: info.fieldName,
         error: error.message,
         stack: error.stack
@@ -171,9 +171,9 @@ function logEvent(level = 'info', message, context = {}) {
   };
   
   if (isDevelopment()) {
-    console.log(JSON.stringify(logEntry, null, 2));
+    logger.info(JSON.stringify(logEntry, null, 2));
   } else {
-    console.log(JSON.stringify(logEntry));
+    logger.info(JSON.stringify(logEntry));
   }
 }
 

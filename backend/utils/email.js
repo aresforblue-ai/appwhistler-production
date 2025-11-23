@@ -262,9 +262,9 @@ function getAccountLockoutTemplate(username, lockoutDurationMinutes, unlockTime)
 async function sendEmail(to, subject, htmlContent, textContent) {
   // If SendGrid is not configured, log to console (development mode)
   if (!SENDGRID_API_KEY || SENDGRID_API_KEY === 'your_sendgrid_api_key') {
-    console.log(`\n📧 [DEV MODE] Email would be sent to: ${to}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`Text Content:\n${textContent || 'See HTML content'}\n`);
+    logger.info(`\n📧 [DEV MODE] Email would be sent to: ${to}`);
+    logger.info(`Subject: ${subject}`);
+    logger.info(`Text Content:\n${textContent || 'See HTML content'}\n`);
     return {
       success: true,
       mode: 'development',
@@ -285,14 +285,14 @@ async function sendEmail(to, subject, htmlContent, textContent) {
     };
 
     await sgMail.send(msg);
-    console.log(`✅ Email sent successfully to ${to}`);
+    logger.info(`✅ Email sent successfully to ${to}`);
     return {
       success: true,
       mode: 'production',
       recipient: to
     };
   } catch (error) {
-    console.error(`❌ Email send error:`, error.response?.body || error.message);
+    logger.error(`❌ Email send error:`, error.response?.body || error.message);
     throw new Error(`Failed to send email: ${error.message}`);
   }
 }

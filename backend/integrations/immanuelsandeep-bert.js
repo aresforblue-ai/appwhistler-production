@@ -9,6 +9,7 @@
  */
 
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 // BERT API endpoint (deployed separately as Flask service)
 const BERT_ENDPOINT = process.env.BERT_ENDPOINT || 'http://localhost:5003/classify';
@@ -45,11 +46,11 @@ async function classifyWithBERT(reviewText, options = {}) {
       source: 'BERT_API'
     };
   } catch (error) {
-    console.error('[BERT Integration] API call failed:', error.message);
+    logger.error('[BERT Integration] API call failed:', error.message);
 
     // Fallback to heuristic-based classification
     if (options.allowFallback !== false) {
-      console.log('[BERT Integration] Using fallback heuristic classifier');
+      logger.info('[BERT Integration] Using fallback heuristic classifier');
       return classifyWithHeuristics(reviewText);
     }
 
@@ -198,7 +199,7 @@ async function analyzeWithBERT(reviewText, metadata = {}) {
       redFlags: generateBERTRedFlags(reviewText, result)
     };
   } catch (error) {
-    console.error('[BERT Integration] Analysis failed:', error.message);
+    logger.error('[BERT Integration] Analysis failed:', error.message);
     return null;
   }
 }

@@ -34,7 +34,7 @@ module.exports = function createPrivacyRouter(pool) {
 
       return res.json({ success: true, data: exportPayload });
     } catch (error) {
-      console.error('Privacy export failed:', error);
+      logger.error('Privacy export failed:', error);
       return res.status(500).json(formatErrorResponse(error, 'INTERNAL_SERVER_ERROR'));
     }
   });
@@ -89,7 +89,7 @@ module.exports = function createPrivacyRouter(pool) {
 
       return res.json({ success: true, message: 'Account anonymized and scheduled for logout across sessions.' });
     } catch (error) {
-      console.error('Privacy deletion failed:', error);
+      logger.error('Privacy deletion failed:', error);
       return res.status(500).json(formatErrorResponse(error, 'INTERNAL_SERVER_ERROR'));
     }
   });
@@ -101,7 +101,7 @@ module.exports = function createPrivacyRouter(pool) {
       res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
       return res.send(markdown);
     } catch (error) {
-      console.error('Failed to read privacy policy file:', error);
+      logger.error('Failed to read privacy policy file:', error);
       return res.status(500).json(formatErrorResponse(error, 'INTERNAL_SERVER_ERROR'));
     }
   });

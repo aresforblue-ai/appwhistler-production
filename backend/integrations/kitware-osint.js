@@ -9,6 +9,7 @@
  */
 
 const axios = require('axios');
+const logger = require('../utils/logger');
 
 // Kitware API endpoint (deployed separately)
 const KITWARE_ENDPOINT = process.env.KITWARE_ENDPOINT || 'http://localhost:5005/analyze';
@@ -48,11 +49,11 @@ async function analyzeWithKitware(mediaUrl, options = {}) {
       }
     };
   } catch (error) {
-    console.error('[Kitware Integration] Analysis failed:', error.message);
+    logger.error('[Kitware Integration] Analysis failed:', error.message);
 
     // Fallback to basic EXIF/format checking
     if (options.allowFallback !== false) {
-      console.log('[Kitware Integration] Using fallback EXIF checker');
+      logger.info('[Kitware Integration] Using fallback EXIF checker');
       return analyzeWithFallback(mediaUrl);
     }
 
@@ -166,7 +167,7 @@ async function analyzeWithFallback(mediaUrl) {
 
     return analysis;
   } catch (error) {
-    console.error('[Kitware Fallback] Failed to analyze media:', error.message);
+    logger.error('[Kitware Fallback] Failed to analyze media:', error.message);
     return {
       isManipulated: false,
       manipulationScore: 0,
@@ -219,7 +220,7 @@ function parseBasicEXIF(buffer) {
     // This is a placeholder for the concept
 
   } catch (error) {
-    console.error('[EXIF Parser] Error:', error.message);
+    logger.error('[EXIF Parser] Error:', error.message);
   }
 
   return result;
@@ -293,7 +294,7 @@ async function analyzeAppMedia(appData, options = {}) {
       redFlags: generateKitwareRedFlags(analyses)
     };
   } catch (error) {
-    console.error('[Kitware Integration] App media analysis failed:', error.message);
+    logger.error('[Kitware Integration] App media analysis failed:', error.message);
     return null;
   }
 }

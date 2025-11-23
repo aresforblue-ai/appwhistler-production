@@ -18,7 +18,7 @@ class CacheManager {
     const redisUrl = getSecret('REDIS_URL');
     
     if (!redisUrl) {
-      console.log('⚠️  Redis not configured. Using in-memory cache (dev/test mode).');
+      logger.info('⚠️  Redis not configured. Using in-memory cache (dev/test mode).');
       return;
     }
 
@@ -29,7 +29,7 @@ class CacheManager {
         socket: {
           reconnectStrategy: (retries) => {
             if (retries > 10) {
-              console.error('❌ Redis reconnection failed after 10 attempts');
+              logger.error('❌ Redis reconnection failed after 10 attempts');
               return new Error('Redis max retries exceeded');
             }
             return retries * 50;
@@ -37,15 +37,15 @@ class CacheManager {
         }
       });
 
-      this.redis.on('error', (err) => console.error('Redis error:', err));
+      this.redis.on('error', (err) => logger.error('Redis error:', err));
       this.redis.on('connect', () => {
-        console.log('✅ Redis connected');
+        logger.info('✅ Redis connected');
         this.redisEnabled = true;
       });
 
       this.redis.connect();
     } catch (error) {
-      console.warn('⚠️  Redis initialization failed, using in-memory cache:', error.message);
+      logger.warn('⚠️  Redis initialization failed, using in-memory cache:', error.message);
       this.redis = null;
     }
   }
@@ -62,7 +62,7 @@ class CacheManager {
       if (this.redisEnabled && this.redis) {
         const value = await this.redis.get(key);
         if (value) {
-          console.log(`📦 Cache HIT (Redis): ${key}`);
+          logger.info(`📦 Cache HIT (Redis): ${key}`);
           return JSON.parse(value);
         }
       } else if (this.inMemoryCache.has(key)) {
@@ -72,14 +72,14 @@ class CacheManager {
           this.inMemoryCache.delete(key);
           return null;
         }
-        console.log(`📦 Cache HIT (Memory): ${key}`);
+        logger.info(`📦 Cache HIT (Memory): ${key}`);
         return cached.value;
       }
 
-      console.log(`❌ Cache MISS: ${key}`);
+      logger.info(`❌ Cache MISS: ${key}`);
       return null;
     } catch (error) {
-      console.warn(`Cache get error for ${key}:`, error.message);
+      logger.warn(`Cache get error for ${key}:`, error.message);
       return null;
     }
   }
@@ -96,14 +96,14 @@ class CacheManager {
     try {
       if (this.redisEnabled && this.redis) {
         await this.redis.setEx(key, ttlSeconds, JSON.stringify(value));
-        console.log(`💾 Cache SET (Redis): ${key} (TTL: ${ttlSeconds}s)`);
+        logger.info(`💾 Cache SET (Redis): ${key} (TTL: ${ttlSeconds}s)`);
       } else {
         const expiresAt = new Date(Date.now() + ttlSeconds * 1000);
         this.inMemoryCache.set(key, { value, expiresAt });
-        console.log(`💾 Cache SET (Memory): ${key} (TTL: ${ttlSeconds}s)`);
+        logger.info(`💾 Cache SET (Memory): ${key} (TTL: ${ttlSeconds}s)`);
       }
     } catch (error) {
-      console.warn(`Cache set error for ${key}:`, error.message);
+      logger.warn(`Cache set error for ${key}:`, error.message);
     }
   }
 
@@ -118,9 +118,9 @@ class CacheManager {
       } else {
         this.inMemoryCache.delete(key);
       }
-      console.log(`🗑️  Cache DELETED: ${key}`);
+      logger.info(`🗑️  Cache DELETED: ${key}`);
     } catch (error) {
-      console.warn(`Cache delete error for ${key}:`, error.message);
+      logger.warn(`Cache delete error for ${key}:`, error.message);
     }
   }
 
@@ -134,9 +134,9 @@ class CacheManager {
       } else {
         this.inMemoryCache.clear();
       }
-      console.log('🗑️  Cache CLEARED');
+      logger.info('🗑️  Cache CLEARED');
     } catch (error) {
-      console.warn('Cache clear error:', error.message);
+      logger.warn('Cache clear error:', error.message);
     }
   }
 
@@ -179,7 +179,7 @@ class CacheManager {
   async disconnect() {
     if (this.redisEnabled && this.redis) {
       await this.redis.quit();
-      console.log('✅ Redis disconnected');
+      logger.info('✅ Redis disconnected');
     }
   }
 }

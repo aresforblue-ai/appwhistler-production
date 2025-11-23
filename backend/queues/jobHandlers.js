@@ -1,4 +1,5 @@
 // src/backend/queues/jobHandlers.js
+const logger = require('../utils/logger');
 // Job handlers for background tasks
 
 const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/email');
@@ -10,7 +11,7 @@ const blockchain = require('../../blockchain/blockchain');
 async function handleEmailJob(jobData) {
   const { type, to, subject, templateData } = jobData;
 
-  console.log(`📧 Processing email job: ${type} to ${to}`);
+  logger.info(`📧 Processing email job: ${type} to ${to}`);
 
   try {
     switch (type) {
@@ -22,16 +23,16 @@ async function handleEmailJob(jobData) {
         break;
       case 'notification':
         // Custom notification email
-        console.log(`📧 Sending notification to ${to}:`, templateData);
+        logger.info(`📧 Sending notification to ${to}:`, templateData);
         break;
       default:
         throw new Error(`Unknown email type: ${type}`);
     }
 
-    console.log(`✅ Email sent: ${type} to ${to}`);
+    logger.info(`✅ Email sent: ${type} to ${to}`);
     return { success: true, type, recipient: to };
   } catch (error) {
-    console.error(`❌ Email job failed: ${type}`, error.message);
+    logger.error(`❌ Email job failed: ${type}`, error.message);
     throw error;
   }
 }
@@ -42,7 +43,7 @@ async function handleEmailJob(jobData) {
 async function handleBlockchainJob(jobData) {
   const { type, factCheckId, data } = jobData;
 
-  console.log(`⛓️  Processing blockchain job: ${type} for fact-check ${factCheckId}`);
+  logger.info(`⛓️  Processing blockchain job: ${type} for fact-check ${factCheckId}`);
 
   try {
     switch (type) {
@@ -50,10 +51,10 @@ async function handleBlockchainJob(jobData) {
         // Stamp fact-check on blockchain
         if (blockchain.provider) {
           const txHash = await blockchain.stampFactCheck(factCheckId, data);
-          console.log(`✅ Fact-check stamped on blockchain: ${txHash}`);
+          logger.info(`✅ Fact-check stamped on blockchain: ${txHash}`);
           return { success: true, type, txHash, factCheckId };
         } else {
-          console.warn('⚠️  Blockchain provider not available, skipping stamp');
+          logger.warn('⚠️  Blockchain provider not available, skipping stamp');
           return { success: false, reason: 'No blockchain provider' };
         }
         break;
@@ -62,10 +63,10 @@ async function handleBlockchainJob(jobData) {
         // Record donation on blockchain
         if (blockchain.signer) {
           const txHash = await blockchain.recordDonation(data.donor, data.amount, data.appId);
-          console.log(`✅ Donation recorded: ${txHash}`);
+          logger.info(`✅ Donation recorded: ${txHash}`);
           return { success: true, type, txHash };
         } else {
-          console.warn('⚠️  Blockchain signer not available, skipping donation');
+          logger.warn('⚠️  Blockchain signer not available, skipping donation');
           return { success: false, reason: 'No blockchain signer' };
         }
         break;
@@ -74,7 +75,7 @@ async function handleBlockchainJob(jobData) {
         throw new Error(`Unknown blockchain job type: ${type}`);
     }
   } catch (error) {
-    console.error(`❌ Blockchain job failed: ${type}`, error.message);
+    logger.error(`❌ Blockchain job failed: ${type}`, error.message);
     throw error;
   }
 }
@@ -85,26 +86,26 @@ async function handleBlockchainJob(jobData) {
 async function handleFactCheckJob(jobData) {
   const { type, factCheckId, claimId } = jobData;
 
-  console.log(`🔍 Processing fact-check job: ${type}`);
+  logger.info(`🔍 Processing fact-check job: ${type}`);
 
   try {
     switch (type) {
       case 'verify-claim':
         // Perform async fact-checking (could integrate with AI service)
-        console.log(`🔍 Verifying claim ${claimId} for fact-check ${factCheckId}`);
+        logger.info(`🔍 Verifying claim ${claimId} for fact-check ${factCheckId}`);
         // This would trigger more detailed verification
         return { success: true, type, factCheckId, claimId };
 
       case 'update-scores':
         // Update cached scores
-        console.log(`📊 Updating fact-check scores for ${factCheckId}`);
+        logger.info(`📊 Updating fact-check scores for ${factCheckId}`);
         return { success: true, type, factCheckId };
 
       default:
         throw new Error(`Unknown fact-check job type: ${type}`);
     }
   } catch (error) {
-    console.error(`❌ Fact-check job failed: ${type}`, error.message);
+    logger.error(`❌ Fact-check job failed: ${type}`, error.message);
     throw error;
   }
 }

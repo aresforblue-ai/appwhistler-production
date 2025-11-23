@@ -1,4 +1,5 @@
 // src/backend/queues/jobManager.js
+const logger = require('../utils/logger');
 // Background job queue management using Bull/BullMQ with fallback to inline execution
 
 const { getSecret } = require('../../config/secrets');
@@ -18,7 +19,7 @@ class JobManager {
     const redisUrl = getSecret('REDIS_URL');
 
     if (!redisUrl) {
-      console.log('⚠️  Redis not configured. Using in-memory job execution (dev/test mode).');
+      logger.info('⚠️  Redis not configured. Using in-memory job execution (dev/test mode).');
       this.queue = 'memory'; // Marker for fallback mode
       return;
     }
@@ -31,14 +32,14 @@ class JobManager {
         url: redisUrl
       });
 
-      this.redisClient.on('error', (err) => console.error('Redis error:', err));
+      this.redisClient.on('error', (err) => logger.error('Redis error:', err));
       this.redisClient.on('connect', () => {
-        console.log('✅ Redis connected for job queue');
+        logger.info('✅ Redis connected for job queue');
         this.redisEnabled = true;
       });
 
       this.redisClient.connect().catch(() => {
-        console.warn('⚠️  Redis connection failed, falling back to in-memory execution');
+        logger.warn('⚠️  Redis connection failed, falling back to in-memory execution');
         this.queue = 'memory';
       });
 
@@ -51,7 +52,7 @@ class JobManager {
 
       this.redisEnabled = true;
     } catch (error) {
-      console.warn('⚠️  Bull/BullMQ initialization failed, using in-memory execution:', error.message);
+      logger.warn('⚠️  Bull/BullMQ initialization failed, using in-memory execution:', error.message);
       this.queue = 'memory';
     }
   }
@@ -65,7 +66,7 @@ class JobManager {
     if (!this.redisEnabled || this.queue === 'memory') {
       // Store handler for in-memory execution
       this.workers.set(queueName, handler);
-      console.log(`📋 Worker registered (in-memory): ${queueName}`);
+      logger.info(`📋 Worker registered (in-memory): ${queueName}`);
       return;
     }
 
@@ -77,7 +78,7 @@ class JobManager {
         try {
           return await handler(job.data);
         } catch (error) {
-          console.error(`❌ Job error in ${queueName}:`, error);
+          logger.error(`❌ Job error in ${queueName}:`, error);
           throw error;
         }
       }, {
@@ -85,17 +86,17 @@ class JobManager {
       });
 
       worker.on('completed', (job) => {
-        console.log(`✅ Job completed: ${queueName} (ID: ${job.id})`);
+        logger.info(`✅ Job completed: ${queueName} (ID: ${job.id})`);
       });
 
       worker.on('failed', (job, error) => {
-        console.error(`❌ Job failed: ${queueName} (ID: ${job.id}) - ${error.message}`);
+        logger.error(`❌ Job failed: ${queueName} (ID: ${job.id}) - ${error.message}`);
       });
 
       this.workers.set(queueName, worker);
-      console.log(`📋 Worker registered (Redis): ${queueName}`);
+      logger.info(`📋 Worker registered (Redis): ${queueName}`);
     } catch (error) {
-      console.error(`Failed to register worker for ${queueName}:`, error.message);
+      logger.error(`Failed to register worker for ${queueName}:`, error.message);
     }
   }
 
@@ -114,7 +115,7 @@ class JobManager {
       }
 
       if (!this.queue || !this.queue[queueName]) {
-        console.warn(`⚠️  Queue not found: ${queueName}`);
+        logger.warn(`⚠️  Queue not found: ${queueName}`);
         return null;
       }
 
@@ -129,10 +130,10 @@ class JobManager {
         }
       );
 
-      console.log(`📤 Job submitted: ${queueName} (ID: ${job.id})`);
+      logger.info(`📤 Job submitted: ${queueName} (ID: ${job.id})`);
       return job.id.toString();
     } catch (error) {
-      console.error(`Failed to submit job to ${queueName}:`, error.message);
+      logger.error(`Failed to submit job to ${queueName}:`, error.message);
       return null;
     }
   }
@@ -144,17 +145,17 @@ class JobManager {
     const handler = this.workers.get(queueName);
 
     if (!handler) {
-      console.warn(`⚠️  No handler registered for queue: ${queueName}`);
+      logger.warn(`⚠️  No handler registered for queue: ${queueName}`);
       return null;
     }
 
     try {
-      console.log(`⏱️  Executing job in-memory: ${queueName}`);
+      logger.info(`⏱️  Executing job in-memory: ${queueName}`);
       const result = await handler(jobData);
-      console.log(`✅ In-memory job completed: ${queueName}`);
+      logger.info(`✅ In-memory job completed: ${queueName}`);
       return 'inline-job';
     } catch (error) {
-      console.error(`❌ In-memory job error: ${queueName}`, error);
+      logger.error(`❌ In-memory job error: ${queueName}`, error);
       throw error;
     }
   }
@@ -187,7 +188,7 @@ class JobManager {
         error: job.failedReason
       };
     } catch (error) {
-      console.error(`Error fetching job status:`, error);
+      logger.error(`Error fetching job status:`, error);
       return null;
     }
   }
@@ -207,7 +208,7 @@ class JobManager {
 
       return await this.queue[queueName].getJobCounts();
     } catch (error) {
-      console.error(`Error fetching queue stats for ${queueName}:`, error);
+      logger.error(`Error fetching queue stats for ${queueName}:`, error);
       return null;
     }
   }
@@ -218,16 +219,16 @@ class JobManager {
   async pauseQueue(queueName) {
     try {
       if (!this.redisEnabled || this.queue === 'memory') {
-        console.log(`⏸️  Queue paused (in-memory): ${queueName}`);
+        logger.info(`⏸️  Queue paused (in-memory): ${queueName}`);
         return;
       }
 
       if (this.queue && this.queue[queueName]) {
         await this.queue[queueName].pause();
-        console.log(`⏸️  Queue paused: ${queueName}`);
+        logger.info(`⏸️  Queue paused: ${queueName}`);
       }
     } catch (error) {
-      console.error(`Error pausing queue ${queueName}:`, error);
+      logger.error(`Error pausing queue ${queueName}:`, error);
     }
   }
 
@@ -237,16 +238,16 @@ class JobManager {
   async resumeQueue(queueName) {
     try {
       if (!this.redisEnabled || this.queue === 'memory') {
-        console.log(`▶️  Queue resumed (in-memory): ${queueName}`);
+        logger.info(`▶️  Queue resumed (in-memory): ${queueName}`);
         return;
       }
 
       if (this.queue && this.queue[queueName]) {
         await this.queue[queueName].resume();
-        console.log(`▶️  Queue resumed: ${queueName}`);
+        logger.info(`▶️  Queue resumed: ${queueName}`);
       }
     } catch (error) {
-      console.error(`Error resuming queue ${queueName}:`, error);
+      logger.error(`Error resuming queue ${queueName}:`, error);
     }
   }
 
@@ -267,9 +268,9 @@ class JobManager {
         await this.redisClient.quit();
       }
 
-      console.log('✅ Job queue closed gracefully');
+      logger.info('✅ Job queue closed gracefully');
     } catch (error) {
-      console.error('Error closing job queue:', error);
+      logger.error('Error closing job queue:', error);
     }
   }
 }

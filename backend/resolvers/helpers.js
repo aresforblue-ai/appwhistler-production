@@ -82,7 +82,7 @@ async function requireRole(context, allowedRoles = ['admin', 'moderator']) {
     );
   }
 
-  console.log(`✅ Role check passed: User ${userId} has role ${userRole}`);
+  logger.info(`✅ Role check passed: User ${userId} has role ${userRole}`);
   return { userId, role: userRole };
 }
 

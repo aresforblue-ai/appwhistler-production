@@ -10,6 +10,7 @@
  */
 
 const axios = require('axios');
+const logger = require('./logger');
 
 // Import external agent integrations
 const { classifyReview: classifyWithSayam } = require('../integrations/sayamalt-svm');
@@ -127,7 +128,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[SayamML] Error:', error.message);
+      logger.error('[SayamML] Error:', error.message);
       return null; // Agent offline, skip gracefully
     }
   }
@@ -150,7 +151,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[Developer306] Error:', error.message);
+      logger.error('[Developer306] Error:', error.message);
       return null;
     }
   }
@@ -172,7 +173,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[BERT] Error:', error.message);
+      logger.error('[BERT] Error:', error.message);
       return null;
     }
   }
@@ -198,7 +199,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[Cofacts] Error:', error.message);
+      logger.error('[Cofacts] Error:', error.message);
       return null;
     }
   }
@@ -220,7 +221,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[Checkup] Error:', error.message);
+      logger.error('[Checkup] Error:', error.message);
       return null;
     }
   }
@@ -246,7 +247,7 @@ class ExternalAgentAdapter {
         details: result
       };
     } catch (error) {
-      console.error('[Kitware] Error:', error.message);
+      logger.error('[Kitware] Error:', error.message);
       return null;
     }
   }
@@ -271,7 +272,7 @@ class MultiAgentOrchestrator {
       allReviews
     } = input;
 
-    console.log('[Orchestrator] Starting multi-agent analysis...');
+    logger.info('[Orchestrator] Starting multi-agent analysis...');
 
     // Run all agents in parallel
     const agentPromises = [
@@ -304,7 +305,7 @@ class MultiAgentOrchestrator {
       .map(r => r.status === 'fulfilled' ? r.value : null)
       .filter(Boolean);
 
-    console.log(`[Orchestrator] ${agentResults.length} agents responded`);
+    logger.info(`[Orchestrator] ${agentResults.length} agents responded`);
 
     // Calculate weighted composite score
     const compositeScore = this.calculateCompositeScore(agentResults);

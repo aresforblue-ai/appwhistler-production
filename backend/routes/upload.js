@@ -46,7 +46,7 @@ router.post(
       const result = await uploadAvatarToIPFS(req.file, userId);
 
       // Log successful upload
-      console.log(`✅ Avatar uploaded for user ${userId}: ${result.avatar.ipfsHash}`);
+      logger.info(`✅ Avatar uploaded for user ${userId}: ${result.avatar.ipfsHash}`);
 
       res.status(200).json({
         success: true,
@@ -60,7 +60,7 @@ router.post(
         }
       });
     } catch (error) {
-      console.error('Avatar upload error:', error);
+      logger.error('Avatar upload error:', error);
       res.status(500).json({
         error: 'Upload failed',
         message: error.message
@@ -103,7 +103,7 @@ router.post(
       // Upload to IPFS
       const result = await uploadAppIconToIPFS(req.file, appId, userId);
 
-      console.log(`✅ App icon uploaded for app ${appId}: ${result.icon.ipfsHash}`);
+      logger.info(`✅ App icon uploaded for app ${appId}: ${result.icon.ipfsHash}`);
 
       res.status(200).json({
         success: true,
@@ -117,7 +117,7 @@ router.post(
         }
       });
     } catch (error) {
-      console.error('App icon upload error:', error);
+      logger.error('App icon upload error:', error);
       res.status(500).json({
         error: 'Upload failed',
         message: error.message
@@ -160,7 +160,7 @@ router.post(
       // Upload to IPFS
       const result = await uploadFactCheckImageToIPFS(req.file, factCheckId, userId);
 
-      console.log(`✅ Fact-check image uploaded: ${result.image.ipfsHash}`);
+      logger.info(`✅ Fact-check image uploaded: ${result.image.ipfsHash}`);
 
       res.status(200).json({
         success: true,
@@ -175,7 +175,7 @@ router.post(
         }
       });
     } catch (error) {
-      console.error('Fact-check image upload error:', error);
+      logger.error('Fact-check image upload error:', error);
       res.status(500).json({
         error: 'Upload failed',
         message: error.message

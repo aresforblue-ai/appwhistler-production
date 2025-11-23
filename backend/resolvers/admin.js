@@ -197,7 +197,7 @@ module.exports = {
       // Invalidate cache since trending apps may have changed
       await cacheManager.delete(cacheManager.constructor.generateKey('trending:apps', { limit: 10 }));
 
-      console.log(`✅ App ${id} verified by user ${userId}`);
+      logger.info(`✅ App ${id} verified by user ${userId}`);
       return result.rows[0];
     }),
 
@@ -220,7 +220,7 @@ module.exports = {
         [userId, 'reject_app', JSON.stringify({ app_id: id, reason: reason || 'No reason provided' })]
       );
 
-      console.log(`❌ App ${id} rejected by user ${userId}: ${reason || 'No reason provided'}`);
+      logger.info(`❌ App ${id} rejected by user ${userId}: ${reason || 'No reason provided'}`);
       return true;
     },
   },

@@ -90,7 +90,7 @@ function addUploadMetadata(req, res, next) {
     req.uploadUserAgent = req.headers['user-agent'];
 
     // Log upload attempt for audit trail
-    console.log(`📤 Upload attempt: ${req.uploadId} by user ${req.user?.userId || 'anonymous'}`);
+    logger.info(`📤 Upload attempt: ${req.uploadId} by user ${req.user?.userId || 'anonymous'}`);
   }
   next();
 }

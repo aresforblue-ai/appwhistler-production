@@ -158,7 +158,7 @@ async function uploadToIPFS(buffer, metadata = {}) {
       timestamp: result.Timestamp
     };
   } catch (error) {
-    console.error('IPFS upload error:', error);
+    logger.error('IPFS upload error:', error);
     throw new Error(`Failed to upload to IPFS: ${error.message}`);
   }
 }
@@ -344,7 +344,7 @@ async function deleteFromIPFS(ipfsHash) {
     await pinata.unpin(ipfsHash);
     return { success: true, message: 'File unpinned from IPFS' };
   } catch (error) {
-    console.error('IPFS deletion error:', error);
+    logger.error('IPFS deletion error:', error);
     throw new Error(`Failed to unpin from IPFS: ${error.message}`);
   }
 }
@@ -364,7 +364,7 @@ async function getIPFSMetadata(ipfsHash) {
     const result = await pinata.pinList(filters);
     return result.rows[0] || null;
   } catch (error) {
-    console.error('IPFS metadata error:', error);
+    logger.error('IPFS metadata error:', error);
     throw new Error(`Failed to get IPFS metadata: ${error.message}`);
   }
 }
