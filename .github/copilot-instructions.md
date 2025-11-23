@@ -161,7 +161,7 @@ GraphQL:
 - **E2E tests**: `npm run test:e2e` - Playwright browser tests in `e2e/` directory
 - **E2E UI mode**: `npm run test:e2e:ui` - Interactive Playwright test runner
 - **Setup**: `tests/setup.js` configures jsdom globals
-- **Note**: Frontend unit tests (`src/App.test.jsx`) have pre-existing failures due to component import issues in test setup - not your responsibility to fix unless related to your changes
+- **Note**: Frontend unit tests (`src/App.test.jsx`) have pre-existing failures - React reports "Element type is invalid" suggesting component export/import mismatch. Not your responsibility to fix unless related to your changes.
 
 ### Backend Tests (Jest)
 - **Unit tests**: `cd backend && npm test` - Jest test runner (58 tests pass)
