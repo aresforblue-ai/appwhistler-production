@@ -6,8 +6,7 @@ const sanitizeHtml = require('sanitize-html');
 const PLAIN_TEXT_OPTIONS = {
   allowedTags: [],
   allowedAttributes: {},
-  disallowedTagsMode: 'discard',
-  textFilter: (text) => text
+  disallowedTagsMode: 'discard'
 };
 
 const RICH_TEXT_OPTIONS = {
@@ -22,7 +21,17 @@ const RICH_TEXT_OPTIONS = {
 function sanitizeString(value, options = PLAIN_TEXT_OPTIONS) {
   if (value === undefined || value === null) return value;
   if (typeof value !== 'string') return value;
-  const sanitized = sanitizeHtml(value, options);
+
+  // Special handling for script/style tags
+  // Remove them entirely for security (don't preserve their content)
+  let processed = value;
+  if (options.allowedTags && options.allowedTags.length === 0) {
+    // Only for plain text mode - remove script/style tags completely
+    processed = value.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    processed = processed.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  }
+
+  const sanitized = sanitizeHtml(processed, options);
   return sanitized.trim();
 }
 

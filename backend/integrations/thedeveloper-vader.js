@@ -21,11 +21,15 @@ function analyzeSentiment(text) {
   // Normalize to VADER-style compound score (-1 to 1)
   const compound = result.comparative; // Already normalized
 
+  // Handle empty text edge case
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+  const wordCount = words.length;
+
   return {
     compound,
     positive: result.positive.length,
     negative: result.negative.length,
-    neutral: text.split(/\s+/).length - result.positive.length - result.negative.length,
+    neutral: wordCount - result.positive.length - result.negative.length,
     score: result.score
   };
 }
@@ -65,13 +69,14 @@ function detectMismatch(reviewText, rating) {
  */
 function extractFeatures(reviewText, rating, metadata = {}) {
   const sent = analyzeSentiment(reviewText);
-  const wordCount = reviewText.split(/\s+/).length;
+  const words = reviewText.trim().split(/\s+/).filter(w => w.length > 0);
+  const wordCount = words.length;
 
   return {
     // Text features
     length: reviewText.length,
     wordCount,
-    avgWordLength: reviewText.length / wordCount,
+    avgWordLength: wordCount > 0 ? reviewText.length / wordCount : 0,
 
     // Sentiment features
     compound: sent.compound,

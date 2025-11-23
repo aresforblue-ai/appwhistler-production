@@ -311,11 +311,11 @@ class MultiAgentOrchestrator {
     const compositeScore = this.calculateCompositeScore(agentResults);
 
     return {
-      overallScore: compositeScore.score,
+      compositeScore: compositeScore.score,
       verdict: compositeScore.verdict,
       agentResults: agentResults,
       consensus: this.calculateConsensus(agentResults),
-      evidenceProvenance: this.buildEvidenceChain(agentResults),
+      evidenceChain: this.buildEvidenceChain(agentResults),
       metadata: {
         totalAgentsRun: agentResults.length,
         coreAgents: agentResults.filter(a => a.source === 'INTERNAL').length,
