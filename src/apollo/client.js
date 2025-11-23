@@ -31,20 +31,26 @@ const authLink = setContext((_, { headers }) => {
 });
 
 // WebSocket connection for real-time subscriptions
-const wsLink = new GraphQLWsLink(
-  createClient({
-    url: `${WS_URI}/graphql`,
-    connectionParams: () => {
-      const token = localStorage.getItem('appwhistler_token');
-      return {
-        authorization: token ? `Bearer ${token}` : '',
-      };
-    },
-    // Reconnect on connection loss
-    shouldRetry: () => true,
-    retryAttempts: 5,
-  })
-);
+// CRITICAL FIX: Store client reference for cleanup
+const wsClient = createClient({
+  url: `${WS_URI}/graphql`,
+  connectionParams: () => {
+    const token = localStorage.getItem('appwhistler_token');
+    return {
+      authorization: token ? `Bearer ${token}` : '',
+    };
+  },
+  // Reconnect on connection loss
+  shouldRetry: () => true,
+  retryAttempts: 5,
+});
+
+const wsLink = new GraphQLWsLink(wsClient);
+
+// Cleanup function for WebSocket - call this when app unmounts or user logs out
+export const cleanupWebSocket = () => {
+  wsClient?.dispose();
+};
 
 // Smart link: Use WebSocket for subscriptions, HTTP for everything else
 const splitLink = split(

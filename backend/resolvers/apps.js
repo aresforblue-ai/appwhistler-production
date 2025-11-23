@@ -34,7 +34,9 @@ module.exports = {
 
       if (search) {
         const normalizedSearch = search.trim();
-        const likePattern = `%${normalizedSearch.replace(/\s+/g, '%')}%`;
+        // SECURITY FIX: Escape ILIKE special characters (%, _) to prevent pattern injection
+        const escapedSearch = normalizedSearch.replace(/[_%\\]/g, '\\$&').replace(/\s+/g, '%');
+        const likePattern = `%${escapedSearch}%`;
         query += ` AND (name ILIKE $${paramCount} OR description ILIKE $${paramCount + 1} OR developer ILIKE $${paramCount + 2})`;
         params.push(likePattern, likePattern, likePattern);
         paramCount += 3;
