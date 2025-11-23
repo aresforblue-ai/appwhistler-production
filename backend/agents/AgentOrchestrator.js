@@ -2,9 +2,9 @@
 // Manages agent lifecycle, dependencies, and result aggregation
 
 const ReviewAnalysisAgent = require('./ReviewAnalysisAgent');
-// Other agents will be imported as we build them
-// const SocialMediaAgent = require('./SocialMediaAgent');
-// const FinancialTrackerAgent = require('./FinancialTrackerAgent');
+const SocialMediaAgent = require('./SocialMediaAgent');
+const FinancialTrackerAgent = require('./FinancialTrackerAgent');
+// Future agents:
 // const DeveloperProfileAgent = require('./DeveloperProfileAgent');
 // const SecurityAnalyzerAgent = require('./SecurityAnalyzerAgent');
 
@@ -19,8 +19,8 @@ class AgentOrchestrator {
    */
   registerAgents() {
     this.agents.reviews = new ReviewAnalysisAgent();
-    // this.agents.social = new SocialMediaAgent();
-    // this.agents.financial = new FinancialTrackerAgent();
+    this.agents.social = new SocialMediaAgent();
+    this.agents.financial = new FinancialTrackerAgent();
     // this.agents.developer = new DeveloperProfileAgent();
     // this.agents.security = new SecurityAnalyzerAgent();
 
@@ -130,10 +130,16 @@ class AgentOrchestrator {
         // Extract score from each agent's result
         if (agentType === 'reviews') {
           score = result.data.authenticity_score || 50;
+        } else if (agentType === 'social') {
+          score = result.data.presence_score || 50;
+        } else if (agentType === 'financial') {
+          score = result.data.transparency_score || 50;
         }
-        // Add other agent score extractions as we build them
-        // else if (agentType === 'social') {
-        //   score = result.data.presence_score || 50;
+        // Future agents:
+        // else if (agentType === 'developer') {
+        //   score = result.data.credibility_score || 50;
+        // } else if (agentType === 'security') {
+        //   score = result.data.security_score || 50;
         // }
 
         components[agentType] = {
@@ -234,9 +240,42 @@ class AgentOrchestrator {
       }
     }
 
-    // Add red flags from other agents as we build them
-    // TODO: Social media red flags
-    // TODO: Financial red flags
+    // Social media red flags
+    if (results.social && results.social.success) {
+      const socialData = results.social.data;
+
+      if (socialData.controversy_flags && socialData.controversy_flags.length > 0) {
+        for (const controversy of socialData.controversy_flags) {
+          redFlags.push({
+            severity: 'major',
+            category: 'social_media',
+            title: 'Social Media Controversy',
+            description: controversy,
+            score_impact: -15
+          });
+        }
+      }
+
+      if (socialData.community_sentiment === 'very_negative') {
+        redFlags.push({
+          severity: 'major',
+          category: 'social_media',
+          title: 'Highly Negative Community Sentiment',
+          description: 'Overwhelmingly negative sentiment across social platforms',
+          score_impact: -20
+        });
+      }
+    }
+
+    // Financial red flags
+    if (results.financial && results.financial.success) {
+      const financialData = results.financial.data;
+
+      if (financialData.red_flags && financialData.red_flags.length > 0) {
+        redFlags.push(...financialData.red_flags);
+      }
+    }
+
     // TODO: Developer red flags
     // TODO: Security red flags
 
