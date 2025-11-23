@@ -741,17 +741,40 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 ### Quick Contribution Guide
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Make your changes following our coding standards
-4. Write tests for new functionality
-5. Ensure all tests pass: `npm test`
-6. Commit with conventional commits: `git commit -m "feat: add new feature"`
-7. Push to your fork: `git push origin feature/your-feature`
-8. Open a pull request
+2. **Read and agree to [CLA.md](CLA.md)** - Required for all contributors
+3. Create a feature branch: `git checkout -b feature/your-feature`
+4. Make your changes following our coding standards
+5. Write tests for new functionality
+6. Ensure all tests pass: `npm test`
+7. Commit with conventional commits: `git commit -m "feat: add new feature"`
+8. Push to your fork: `git push origin feature/your-feature`
+9. Open a pull request
+
+### Brand Protection & Forking
+
+**⚠️ Important for Forks**: If you fork AppWhistler, you **MUST**:
+- Change the project name (remove "AppWhistler" branding)
+- Replace all logos and branded assets
+- Add clear attribution to the original project
+- Review [CLA.md](CLA.md) Section 4 for complete requirements
+
+**Resources**:
+- [BRAND_PROTECTION.md](BRAND_PROTECTION.md) - Comprehensive brand protection guide
+- [CLA.md](CLA.md) - Contributor License Agreement
+- [ASSETS_LICENSE.md](ASSETS_LICENSE.md) - Design asset licensing (CC BY-NC 4.0)
+- [DMCA_TEMPLATE.md](DMCA_TEMPLATE.md) - Enforcement procedures
+
+**Community Monitoring**: Help protect the brand! See [brand bounty program](.github/ISSUE_TEMPLATE/brand-bounty.md) for reporting violations.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project uses dual licensing:
+
+- **Source Code**: Licensed under the [Apache License 2.0](LICENSE)
+- **Design Assets**: Licensed under [CC BY-NC 4.0](ASSETS_LICENSE.md)
+- **Trademarks**: "AppWhistler" name and logo are protected trademarks
+
+See [LICENSE](LICENSE) and [ASSETS_LICENSE.md](ASSETS_LICENSE.md) for complete terms.
 
 ## Support
 
