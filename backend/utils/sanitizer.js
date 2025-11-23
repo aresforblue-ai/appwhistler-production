@@ -22,15 +22,13 @@ function sanitizeString(value, options = PLAIN_TEXT_OPTIONS) {
   if (value === undefined || value === null) return value;
   if (typeof value !== 'string') return value;
 
-  // Special handling for script/style tags
-  // Remove them entirely for security (don't preserve their content)
+  // First pass: Strip dangerous tags (script, style, iframe) completely
   let processed = value;
-  if (options.allowedTags && options.allowedTags.length === 0) {
-    // Only for plain text mode - remove script/style tags completely
-    processed = value.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-    processed = processed.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
-  }
+  processed = processed.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  processed = processed.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '');
+  processed = processed.replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, '');
 
+  // Second pass: Sanitize HTML tags according to policy
   const sanitized = sanitizeHtml(processed, options);
   return sanitized.trim();
 }

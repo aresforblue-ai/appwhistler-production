@@ -39,7 +39,7 @@ const AGENT_REGISTRY = {
     },
     nlp: {
       name: 'NLP Analysis',
-      weight: 0.20,
+      weight: 0.15,
       handler: require('./fakeReviewDetector').analyzeReviewText,
       type: 'INTERNAL'
     },
@@ -51,25 +51,25 @@ const AGENT_REGISTRY = {
     },
     network: {
       name: 'Network Analysis',
-      weight: 0.10,
+      weight: 0.08,
       handler: require('./fakeReviewDetector').detectReviewNetworks,
       type: 'INTERNAL'
     },
     duplicate: {
       name: 'Duplicate Detection',
-      weight: 0.08,
+      weight: 0.06,
       handler: require('./fakeReviewDetector').detectDuplicates,
       type: 'INTERNAL'
     },
     ipAnalysis: {
       name: 'IP Address Analysis',
-      weight: 0.08,
+      weight: 0.06,
       handler: null, // Handled separately in analyzeWithAllAgents
       type: 'INTERNAL'
     },
     deviceFingerprint: {
       name: 'Device Fingerprinting',
-      weight: 0.07,
+      weight: 0.05,
       handler: null, // Handled separately in analyzeWithAllAgents
       type: 'INTERNAL'
     }
@@ -79,14 +79,14 @@ const AGENT_REGISTRY = {
   external: {
     sayamML: {
       name: 'SayamAlt ML Classifier',
-      weight: 0.08,
+      weight: 0.10,
       endpoint: process.env.SAYAM_ML_ENDPOINT || 'http://localhost:5001/predict',
       type: 'EXTERNAL_ML',
       description: 'SVM/Logistic Regression on TF-IDF features'
     },
     developer306: {
       name: 'Developer306 Sentiment',
-      weight: 0.07,
+      weight: 0.08,
       endpoint: process.env.DEVELOPER306_ENDPOINT || 'http://localhost:5002/analyze',
       type: 'EXTERNAL_ML',
       description: 'VADER sentiment + Random Forest'
@@ -100,21 +100,21 @@ const AGENT_REGISTRY = {
     },
     cofacts: {
       name: 'Cofacts Community',
-      weight: 0.05,
+      weight: 0.04,
       endpoint: 'https://cofacts-api.g0v.tw/graphql',
       type: 'EXTERNAL_CROWDSOURCE',
       description: 'Crowdsourced fact-checking from g0v'
     },
     checkup: {
       name: 'Check-up Scraper',
-      weight: 0.03,
+      weight: 0.02,
       endpoint: process.env.CHECKUP_ENDPOINT || 'http://localhost:5004/scrape',
       type: 'EXTERNAL_SCRAPER',
       description: 'Real-time ad/claim scraping'
     },
     kitware: {
       name: 'Kitware OSINT',
-      weight: 0.02,
+      weight: 0.01,
       endpoint: process.env.KITWARE_ENDPOINT || 'http://localhost:5005/analyze',
       type: 'EXTERNAL_OSINT',
       description: 'Deepfake/media manipulation detection'

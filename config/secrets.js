@@ -167,6 +167,7 @@ function validateSecrets() {
 module.exports = {
   loadSecrets,
   getSecret,
+  requireSecret: getSecret, // Alias for backward compatibility
   getNumber,
   getBoolean,
   getArray,
