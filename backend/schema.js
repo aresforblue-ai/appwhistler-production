@@ -95,6 +95,297 @@ const typeDefs = gql`
     updatedAt: DateTime
     reviews: [Review!]
     averageRating: Float
+
+    # Enhanced truth verification (V2.0)
+    truthAnalysis: AppTruthAnalysis
+    detailedScore: DetailedScoreBreakdown
+    redFlags: [RedFlag!]
+    lastAnalyzed: DateTime
+    analysisConfidence: Int
+  }
+
+  # ============================================================================
+  # TRUTH VERIFICATION SYSTEM V2.0 - ENHANCED TYPES
+  # ============================================================================
+
+  # Comprehensive truth analysis for an app
+  type AppTruthAnalysis {
+    id: ID!
+    appId: ID!
+    overallTruthScore: Int!
+    letterGrade: String!  # "A+", "A", "B+", "B", "C+", "C", "D+", "D", "F"
+
+    # Component Scores (0-100 each)
+    socialPresenceScore: Int
+    financialTransparencyScore: Int
+    reviewAuthenticityScore: Int
+    developerCredibilityScore: Int
+    securityPrivacyScore: Int
+
+    # Detailed Breakdowns
+    socialAnalysis: SocialAnalysis
+    financialAnalysis: FinancialAnalysis
+    reviewAnalysis: ReviewAnalysis
+    developerAnalysis: DeveloperAnalysis
+    securityAnalysis: SecurityAnalysisDetail
+
+    # Metadata
+    confidenceLevel: Int!
+    lastAnalyzed: DateTime!
+    analysisVersion: String!
+    warningCount: Int!
+  }
+
+  # Social media presence and reputation analysis
+  type SocialAnalysis {
+    presenceScore: Int!
+    platforms: [SocialPlatformData!]!
+    credibilityIndicators: JSON
+    controversyFlags: [String!]
+    communitySentiment: String
+    evidence: [SocialEvidence!]
+  }
+
+  type SocialPlatformData {
+    platform: String!
+    accountVerified: Boolean
+    followerCount: Int
+    engagementRate: Float
+    authenticityScore: Int
+  }
+
+  type SocialEvidence {
+    id: ID!
+    platform: String!
+    url: String!
+    content: String!
+    author: String
+    sentiment: String!
+    credibilityImpact: Int!
+    relevanceScore: Int!
+    discoveredAt: DateTime!
+  }
+
+  # Financial transparency and funding analysis
+  type FinancialAnalysis {
+    transparencyScore: Int!
+    funding: FundingInfo
+    ownership: OwnershipInfo
+    revenueModel: RevenueModel
+    redFlags: [String!]
+  }
+
+  type FundingInfo {
+    totalRaised: String
+    rounds: [FundingRound!]
+    investors: [Investor!]
+  }
+
+  type FundingRound {
+    round: String!
+    amount: String!
+    date: String
+    leadInvestor: String
+  }
+
+  type Investor {
+    name: String!
+    reputationScore: Int
+    ethicalConcerns: [String!]
+    country: String
+  }
+
+  type OwnershipInfo {
+    parentCompany: String
+    country: String
+    publicFilings: Boolean
+    ownershipType: String
+  }
+
+  type RevenueModel {
+    declared: String
+    verified: Boolean
+    hiddenMonetization: [String!]
+  }
+
+  # Review authenticity analysis (CRITICAL)
+  type ReviewAnalysis {
+    authenticityScore: Int!
+    totalReviewsAnalyzed: Int!
+    authenticReviews: Int!
+    suspiciousReviews: Int!
+    paidEndorsementsDetected: Int!
+    biasIndicators: JSON
+    flaggedReviews: [FlaggedReview!]
+    authenticSentiment: SentimentBreakdown
+  }
+
+  type FlaggedReview {
+    reviewId: ID!
+    platform: String!
+    reason: String!
+    confidence: Float!
+    textSample: String
+    indicators: JSON
+    isFake: Boolean!
+    isPaid: Boolean!
+    hasBias: Boolean!
+  }
+
+  type SentimentBreakdown {
+    positive: Int!
+    neutral: Int!
+    negative: Int!
+  }
+
+  # Developer background and credibility
+  type DeveloperAnalysis {
+    credibilityScore: Int!
+    experience: DeveloperExperience
+    incidentHistory: IncidentHistory
+    codeQuality: CodeQualityMetrics
+  }
+
+  type DeveloperExperience {
+    yearsActive: Int
+    teamSize: Int
+    previousApps: [PreviousApp!]
+    technicalExpertise: String
+  }
+
+  type PreviousApp {
+    name: String!
+    platform: String!
+    rating: Float
+    downloads: String
+    controversies: [String!]
+  }
+
+  type IncidentHistory {
+    securityBreaches: Int!
+    privacyViolations: Int!
+    lawsuits: Int!
+    appStoreRemovals: Int!
+    details: [Incident!]
+  }
+
+  type Incident {
+    type: String!
+    description: String!
+    date: String
+    resolved: Boolean!
+  }
+
+  type CodeQualityMetrics {
+    githubStars: Int
+    codeReviewScore: Int
+    openSourceContributions: Boolean
+    stackOverflowReputation: Int
+  }
+
+  # Security and privacy assessment
+  type SecurityAnalysisDetail {
+    securityScore: Int!
+    privacyScore: Int!
+    permissions: PermissionsAnalysis
+    thirdPartyTrackers: [Tracker!]
+    vulnerabilities: [Vulnerability!]
+    encryption: String
+    dataCollection: DataCollectionInfo
+  }
+
+  type PermissionsAnalysis {
+    requested: [String!]!
+    justified: [String!]
+    suspicious: [String!]
+    explanationQuality: String
+    overPrivileged: Boolean
+  }
+
+  type Tracker {
+    name: String!
+    purpose: String!
+    dataShared: [String!]
+    disclosed: Boolean!
+    privacyRisk: String
+  }
+
+  type Vulnerability {
+    cveId: String
+    severity: String!
+    patched: Boolean!
+    description: String!
+    discoveredDate: String
+  }
+
+  type DataCollectionInfo {
+    disclosed: [String!]!
+    undisclosedDetected: [String!]
+    dataRetentionPeriod: String
+    dataDeletionAvailable: Boolean
+  }
+
+  # Red flag tracking
+  type RedFlag {
+    id: ID!
+    severity: String!  # "critical", "major", "minor"
+    category: String!  # "privacy", "security", "financial", "reviews", "developer"
+    title: String!
+    description: String!
+    evidence: String
+    evidenceUrls: [String!]
+    scoreImpact: Int!
+    status: String!
+    detectedAt: DateTime!
+    detectedByAgent: String
+  }
+
+  # Analysis job tracking
+  type AnalysisJob {
+    id: ID!
+    appId: ID!
+    jobType: String!
+    status: String!  # "queued", "running", "completed", "failed"
+    progress: Int!
+    startedAt: DateTime
+    completedAt: DateTime
+    durationSeconds: Int
+    result: JSON
+    errorMessage: String
+    agentVersion: String
+    agentsUsed: [String!]
+  }
+
+  # Review authenticity details
+  type ReviewAuthenticity {
+    id: ID!
+    reviewId: ID!
+    authenticityScore: Int!
+    isLikelyFake: Boolean!
+    isPaidEndorsement: Boolean!
+    hasBiasIndicators: Boolean!
+    indicators: JSON
+    evidenceSummary: String
+    flaggedReason: String
+    analyzedAt: DateTime!
+  }
+
+  # Detailed score breakdown (for visualization)
+  type DetailedScoreBreakdown {
+    overall: ScoreComponent!
+    social: ScoreComponent!
+    financial: ScoreComponent!
+    reviews: ScoreComponent!
+    developer: ScoreComponent!
+    security: ScoreComponent!
+  }
+
+  type ScoreComponent {
+    score: Int!
+    weight: Float!
+    contributionToOverall: Float!
+    status: String!  # "excellent", "good", "average", "poor", "critical"
+    keyFindings: [String!]
   }
 
   # Fact check type for NewsTruth vertical
@@ -373,6 +664,29 @@ const typeDefs = gql`
       first: Int
       last: Int
     ): FactCheckConnectionCursor!
+
+    # Truth Verification V2.0 Queries
+    # Get comprehensive truth analysis for an app
+    appTruthAnalysis(appId: ID!): AppTruthAnalysis
+
+    # Get detailed score breakdown with visualization data
+    appDetailedScore(appId: ID!): DetailedScoreBreakdown
+
+    # Get red flags for an app
+    appRedFlags(appId: ID!, severity: String, category: String): [RedFlag!]!
+
+    # Get flagged/suspicious reviews for an app
+    flaggedReviews(appId: ID!, platform: String, minConfidence: Float): [FlaggedReview!]!
+
+    # Get review authenticity details
+    reviewAuthenticity(reviewId: ID!): ReviewAuthenticity
+
+    # Get social media evidence for an app
+    socialEvidence(appId: ID!, platform: String, sentiment: String): [SocialEvidence!]!
+
+    # Get analysis job status
+    analysisJob(jobId: ID!): AnalysisJob
+    analysisJobs(appId: ID!, status: String): [AnalysisJob!]!
   }
 
   # Mutations (write operations)
@@ -438,6 +752,38 @@ const typeDefs = gql`
     verifyFactCheck(id: ID!): FactCheck!
     rejectApp(id: ID!, reason: String): Boolean!
     rejectFactCheck(id: ID!, reason: String): Boolean!
+
+    # Truth Verification V2.0 Mutations
+    # Trigger comprehensive analysis for an app
+    analyzeApp(appId: ID!, analysisType: AnalysisType!): AnalysisJob!
+
+    # Manually trigger specific agent analyses
+    analyzeSocialMedia(appId: ID!): AnalysisJob!
+    analyzeFinancials(appId: ID!): AnalysisJob!
+    analyzeReviews(appId: ID!): AnalysisJob!
+    analyzeDeveloper(appId: ID!): AnalysisJob!
+    analyzeSecurity(appId: ID!): AnalysisJob!
+
+    # Report a fake/suspicious review
+    reportFakeReview(reviewId: ID!, reason: String!, evidence: String): Boolean!
+
+    # Challenge a truth score (similar to fact-check appeals)
+    challengeTruthScore(appId: ID!, reasoning: String!, proposedScore: Int): FactCheckAppeal!
+
+    # Admin: Verify or dismiss a red flag
+    verifyRedFlag(redFlagId: ID!): RedFlag!
+    dismissRedFlag(redFlagId: ID!, reason: String!): Boolean!
+  }
+
+  # Analysis type enum for specific agent selection
+  enum AnalysisType {
+    FULL          # All agents - comprehensive analysis
+    SOCIAL_ONLY   # Social media intelligence only
+    REVIEWS_ONLY  # Review authenticity analysis only
+    FINANCIAL     # Financial transparency only
+    DEVELOPER     # Developer background only
+    SECURITY      # Security & privacy only
+    QUICK         # Quick refresh of existing data
   }
 
   # Admin dashboard types
