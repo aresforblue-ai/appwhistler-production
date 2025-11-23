@@ -1,0 +1,50 @@
+# Code Owners for AppWhistler
+# These owners will be requested for review when someone opens a pull request.
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owners - will be requested for all PRs unless specific owners are defined
+* @aresforblue-ai
+
+# Frontend code
+/src/ @aresforblue-ai
+/public/ @aresforblue-ai
+*.jsx @aresforblue-ai
+*.css @aresforblue-ai
+
+# Backend code
+/backend/ @aresforblue-ai
+/backend/server.js @aresforblue-ai
+/backend/resolvers.js @aresforblue-ai
+/backend/schema.js @aresforblue-ai
+
+# Database
+/database/ @aresforblue-ai
+*.sql @aresforblue-ai
+
+# Configuration files
+/config/ @aresforblue-ai
+.env.example @aresforblue-ai
+*.config.js @aresforblue-ai
+
+# CI/CD and workflows
+/.github/ @aresforblue-ai
+/.github/workflows/ @aresforblue-ai
+
+# Documentation
+/docs/ @aresforblue-ai
+*.md @aresforblue-ai
+README.md @aresforblue-ai
+CONTRIBUTING.md @aresforblue-ai
+SECURITY.md @aresforblue-ai
+
+# Tests
+/tests/ @aresforblue-ai
+/e2e/ @aresforblue-ai
+*.test.js @aresforblue-ai
+*.spec.js @aresforblue-ai
+
+# Dependencies
+package.json @aresforblue-ai
+package-lock.json @aresforblue-ai
+/backend/package.json @aresforblue-ai
+/backend/package-lock.json @aresforblue-ai
