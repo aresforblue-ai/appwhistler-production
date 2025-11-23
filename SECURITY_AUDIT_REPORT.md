@@ -23,11 +23,13 @@ This security audit identified **18 critical vulnerabilities**, **12 high-priori
 **CVE Reference**: Similar to CVE-2021-21236
 
 **Finding**:
+
 - The `.env` file containing production secrets is **committed to Git repository**
 - File location: `c:\appwhistler-production\.env`
 - Git tracking confirmed: `git ls-files .env` returns `.env`
 
 **Exposed Secrets**:
+
 ```
 JWT_SECRET=+MUt1JPvyEZ9CStu/DnAKZtMDlmOALVcpfZ34KYk4/4=
 REFRESH_TOKEN_SECRET=7+ThpBI1nfSfDbu8N5LL2+VGFfP6JShNY8kUab/AD08=
@@ -35,12 +37,14 @@ DB_PASSWORD=postgres
 ```
 
 **Impact**:
+
 - Anyone with repository access can compromise all user authentication
 - Database credentials exposed
 - Session hijacking possible
 - Complete system compromise
 
 **Recommendation**:
+
 ```bash
 # IMMEDIATE ACTION REQUIRED
 git rm .env --cached
@@ -56,7 +60,8 @@ git commit -m "Remove .env from version control"
 
 **Severity**: CRITICAL  
 **CWE**: CWE-918 (SSRF), CWE-770 (Unrestricted Resource Allocation)  
-**CVE References**: 
+**CVE References**:
+
 - CVE-2023-45857 (SSRF - Score: 7.5)
 - GHSA-wf5p-g6vw-rhxx (CSRF)
 - GHSA-jr5f-v2jv-69x6 (SSRF)
@@ -66,6 +71,7 @@ git commit -m "Remove .env from version control"
 Backend package `@pinata/sdk` depends on vulnerable Axios version (≤0.30.1)
 
 **Vulnerabilities**:
+
 1. **Server-Side Request Forgery (SSRF)** - CVE-2023-45857
    - Allows attackers to make requests to internal resources
    - Can bypass firewall rules
@@ -79,10 +85,12 @@ Backend package `@pinata/sdk` depends on vulnerable Axios version (≤0.30.1)
    - Vulnerable to CSRF attacks
 
 **Affected Files**:
+
 - `backend/package.json` - `@pinata/sdk@^2.1.0`
 - `backend/utils/ipfsUpload.js` - IPFS upload functionality
 
 **Recommendation**:
+
 ```bash
 # Update dependencies
 cd backend
@@ -102,23 +110,27 @@ npm audit
 **CVE Reference**: Similar to CVE-2020-26870
 
 **Finding**:
+
 - No CSRF tokens implemented for state-changing operations
 - GraphQL mutations vulnerable to CSRF attacks
 - REST API endpoints lack CSRF protection
 - Only OAuth flow has CSRF state parameter (unused)
 
 **Affected Endpoints**:
+
 - All GraphQL mutations (`/graphql`)
 - File upload endpoints (`/api/v1/upload/*`)
 - Privacy requests (`/api/v1/privacy/*`)
 
 **Impact**:
+
 - Attackers can forge requests on behalf of authenticated users
 - Account takeover via password change
 - Unauthorized data modification
 - Fund transfers (if implemented)
 
 **Example Attack Vector**:
+
 ```html
 <!-- Malicious website -->
 <form action="http://appwhistler.com/graphql" method="POST">
@@ -128,6 +140,7 @@ npm audit
 ```
 
 **Recommendation**:
+
 ```javascript
 // Install csurf middleware
 npm install csurf
@@ -146,6 +159,7 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
 ```
 
 Frontend modification needed:
+
 ```javascript
 // src/apollo/client.js - Add CSRF token
 const authLink = setContext(async (_, { headers }) => {
@@ -173,6 +187,7 @@ const authLink = setContext(async (_, { headers }) => {
 File: `backend/utils/validation.js:33-59`
 
 Current password requirements:
+
 ```javascript
 if (password.length < 8) {
   return { valid: false, message: 'Password must be at least 8 characters' };
@@ -180,6 +195,7 @@ if (password.length < 8) {
 ```
 
 **Issues**:
+
 - Minimum length of 8 characters is below NIST 800-63B recommendation (12+)
 - No complexity enforcement (uppercase, lowercase, numbers, symbols)
 - Maximum length of 128 is good, but not enforced at registration
@@ -187,11 +203,13 @@ if (password.length < 8) {
 - No prevention of username in password
 
 **Impact**:
+
 - Vulnerable to brute force attacks
 - Common passwords like "password123" accepted
 - Weak passwords compromise user accounts
 
 **Recommendation**:
+
 ```javascript
 // backend/utils/validation.js - Enhanced password validation
 function validatePassword(password) {
@@ -246,21 +264,25 @@ function validatePassword(password) {
 
 **Finding**:
 File: `backend/resolvers/auth.js:77`
+
 ```javascript
 const passwordHash = await bcrypt.hash(password, 10);
 ```
 
 **Issue**:
+
 - Bcrypt work factor (rounds) set to 10
 - Modern hardware can compute 2^10 (1,024) hashes very quickly
 - GPU-accelerated attacks can test millions of passwords per second
 - OWASP recommends minimum of 12-14 rounds in 2025
 
 **Impact**:
+
 - If database is compromised, password hashes can be cracked in hours/days
 - Rainbow table attacks more effective
 
 **Recommendation**:
+
 ```javascript
 // backend/resolvers/auth.js
 const BCRYPT_ROUNDS = 12; // Minimum recommended for 2025
@@ -283,23 +305,27 @@ const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
 
 **Finding**:
 File: `backend/config-secrets.cjs:33`
+
 ```javascript
 JWT_SECRET: process.env.JWT_SECRET || 'dev_secret_CHANGE_IN_PRODUCTION',
 ```
 
 **Issues**:
+
 - Default fallback secret is hardcoded and weak
 - If environment variable is not set, all JWT tokens can be forged
 - Production deployment might accidentally use default secret
 - Similar issue with REFRESH_TOKEN_SECRET
 
 **Impact**:
+
 - Complete authentication bypass
 - Attackers can generate valid tokens for any user
 - Session hijacking
 - Privilege escalation
 
 **Recommendation**:
+
 ```javascript
 // backend/config-secrets.cjs
 function requireSecret(key) {
@@ -329,13 +355,16 @@ REFRESH_TOKEN_SECRET: requireSecret('REFRESH_TOKEN_SECRET'),
 Multiple files contain `console.log()` statements that may leak sensitive data:
 
 **Examples**:
+
 1. `backend/middleware/auth.js:59, 238`
+
    ```javascript
    console.error('Authentication error:', error);
    console.warn('Error calculating token TTL:', error);
    ```
 
 2. `backend/middleware/upload.js:82`
+
    ```javascript
    console.log(`📤 Upload attempt: ${req.uploadId} by user ${req.user?.userId || 'anonymous'}`);
    ```
@@ -343,6 +372,7 @@ Multiple files contain `console.log()` statements that may leak sensitive data:
 3. Multiple resolver files use `console.log/error/warn` (20+ instances found)
 
 4. `backend/resolvers/auth.js:98`
+
    ```javascript
    sendWelcomeEmail(...).catch(err => {
      console.error('Failed to send welcome email:', err.message);
@@ -350,17 +380,20 @@ Multiple files contain `console.log()` statements that may leak sensitive data:
    ```
 
 **Issues**:
+
 - Error messages may contain sensitive data (tokens, passwords, emails)
 - Console logs in production are often collected and stored
 - No log sanitization or redaction
 - Winston logger exists but console.* still used in many places
 
 **Impact**:
+
 - Sensitive data stored in log files accessible to admins/attackers
 - Compliance violations (GDPR, PCI-DSS)
 - Information leakage aids attackers
 
 **Recommendation**:
+
 ```javascript
 // 1. Replace all console.* with logger
 const logger = require('./utils/logger');
@@ -418,11 +451,13 @@ module.exports = secureLogger;
 File: `backend/middleware/auth.js:143-185`
 
 The `refreshAccessToken` function verifies refresh tokens but:
+
 - No check if user's account is deleted/suspended
 - No validation of token age (30-day tokens never expire if blacklist cleared)
 - Refresh tokens not rotated on use (same token can be reused indefinitely)
 
 **Recommendation**:
+
 ```javascript
 // Implement refresh token rotation
 async function refreshAccessToken(refreshToken, pool) {
@@ -479,24 +514,28 @@ async function refreshAccessToken(refreshToken, pool) {
 File: `backend/resolvers/auth.js:103-178`
 
 Login mutation has account lockout (good), but:
+
 - Rate limiting on `/graphql` is too permissive (100 requests/15 min for anonymous)
 - No dedicated rate limit for login/register mutations
 - Account lockout only triggers after 5 failed attempts (easily bypassed with multiple IPs)
 - Password reset endpoint not rate-limited separately
 
 **Current Config**:
+
 ```javascript
 // backend/middleware/rateLimiter.js
 const anonymousLimit = 100; // Too high for auth endpoints
 ```
 
 **Impact**:
+
 - Credential stuffing attacks
 - Brute force password guessing
 - Account enumeration
 - DoS by triggering many lockouts
 
 **Recommendation**:
+
 ```javascript
 // backend/middleware/authRateLimiter.js
 const rateLimit = require('express-rate-limit');
@@ -541,17 +580,20 @@ app.use('/graphql', (req, res, next) => {
 File: `backend/middleware/upload.js` and `backend/routes/upload.js`
 
 File uploads use `multer.memoryStorage()` (good), but:
+
 - No validation of filename before processing
 - Files uploaded to IPFS might contain malicious filenames
 - Sharp library processes images without filename sanitization
 
 **Potential Attack**:
+
 ```
 POST /api/v1/upload/avatar
 Content-Disposition: form-data; name="avatar"; filename="../../../etc/passwd.jpg"
 ```
 
 **Recommendation**:
+
 ```javascript
 // backend/middleware/upload.js - Add filename sanitization
 const path = require('path');
@@ -589,6 +631,7 @@ const fileFilter = (req, file, cb) => {
 File: `backend/server.js:138-151`
 
 Helmet is configured but missing several important headers:
+
 ```javascript
 app.use(helmet({
   contentSecurityPolicy: { ... },
@@ -598,6 +641,7 @@ app.use(helmet({
 ```
 
 **Recommendation**:
+
 ```javascript
 app.use(helmet({
   contentSecurityPolicy: {
@@ -655,6 +699,7 @@ app.use(cors({
 **Issue**: Null origins (file://, data:, etc.) are allowed in development mode.
 
 **Recommendation**:
+
 ```javascript
 origin: (origin, callback) => {
   // Always reject null origins
@@ -680,17 +725,20 @@ origin: (origin, callback) => {
 
 **Finding**:
 File: `backend/utils/ipfsUpload.js:18`
+
 ```javascript
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 ```
 
 **Issues**:
+
 - 10MB limit is high for avatar images
 - No global upload size limit beyond individual file
 - Sharp image processing can consume excessive memory for large images
 - No concurrent upload limit per user
 
 **Recommendation**:
+
 ```javascript
 // Different limits for different upload types
 const UPLOAD_LIMITS = {
@@ -739,11 +787,13 @@ function checkConcurrentUploads(req, res, next) {
 File: `backend/middleware/auth.js:287-348` (OAuth2 section)
 
 OAuth redirect URL is not validated against whitelist:
+
 ```javascript
 redirect_uri: getSecret('GOOGLE_REDIRECT_URI'),
 ```
 
 **Recommendation**:
+
 ```javascript
 const ALLOWED_REDIRECT_URIS = [
   'http://localhost:3000/auth/callback',
@@ -765,6 +815,7 @@ function validateRedirectUri(uri) {
 
 **Finding**:
 File: `backend/server.js:243`
+
 ```javascript
 introspection: NODE_ENV !== 'production', // Disable in prod
 ```
@@ -784,11 +835,13 @@ introspection: NODE_ENV !== 'production', // Disable in prod
 File: `backend/middleware/upload.js:13-20`
 
 Only MIME type checked, but:
+
 - MIME type can be spoofed
 - No magic number validation
 - No content inspection
 
 **Recommendation**:
+
 ```javascript
 const fileType = require('file-type'); // npm install file-type
 
@@ -829,6 +882,7 @@ router.post('/avatar', uploadAvatar, async (req, res) => {
 
 **Finding**:
 File: `backend/config-secrets.cjs:135-143`
+
 ```javascript
 function getDatabaseConfig() {
   return {
@@ -856,6 +910,7 @@ function getDatabaseConfig() {
 Files: `backend/utils/email.js` (multiple functions)
 
 User-provided data inserted into email templates without escaping:
+
 ```javascript
 function sendWelcomeEmail(toEmail, username, truthScore) {
   const html = `
@@ -869,6 +924,7 @@ function sendWelcomeEmail(toEmail, username, truthScore) {
 **Issue**: Username could contain HTML/JavaScript if sanitization fails
 
 **Recommendation**:
+
 ```javascript
 function escapeHtml(unsafe) {
   return unsafe
@@ -903,6 +959,7 @@ function sendWelcomeEmail(toEmail, username, truthScore) {
 File: `backend/middleware/auth.js:23, 112-122`
 
 JWT signing/verification doesn't specify algorithm:
+
 ```javascript
 const decoded = jwt.verify(token, JWT_SECRET);
 // No algorithm specified - defaults to any algorithm
@@ -911,6 +968,7 @@ const decoded = jwt.verify(token, JWT_SECRET);
 **Issue**: Algorithm confusion attacks (attackers can change HS256 to RS256)
 
 **Recommendation**:
+
 ```javascript
 // Signing
 jwt.sign(payload, JWT_SECRET, {
@@ -935,8 +993,9 @@ jwt.verify(token, JWT_SECRET, {
 **Severity**: LOW  
 **CWE**: CWE-89 (SQL Injection)
 
-**Finding**: 
+**Finding**:
 Searched for SQL injection vulnerabilities:
+
 ```bash
 grep -r "pool\.query\([^$]*\+" backend/
 ```
@@ -944,6 +1003,7 @@ grep -r "pool\.query\([^$]*\+" backend/
 **Result**: ✓ No matches found - all queries use parameterized statements
 
 **Example of proper usage**:
+
 ```javascript
 // backend/resolvers/auth.js:71
 await context.pool.query(
@@ -965,21 +1025,25 @@ await context.pool.query(
 File: `src/apollo/client.js:23, 38, 108, 115`
 
 JWT tokens stored in localStorage:
+
 ```javascript
 const token = localStorage.getItem('appwhistler_token');
 localStorage.setItem('appwhistler_token', token);
 ```
 
 **Issues**:
+
 - localStorage is accessible to any JavaScript (vulnerable to XSS)
 - Tokens persist after browser close
 - No HttpOnly protection like cookies
 
 **Impact**:
+
 - If XSS vulnerability exists, attacker can steal tokens
 - Session hijacking
 
 **Recommendation**:
+
 ```javascript
 // Option 1: Use HttpOnly cookies instead (backend change required)
 // backend/resolvers/auth.js
@@ -1010,6 +1074,7 @@ login: async (_, { input }, context) => {
 ```
 
 **Note**: localStorage is acceptable IF:
+
 1. Strict CSP prevents XSS
 2. Application uses Content Security Policy to prevent script injection
 3. All user input is properly sanitized (already done via sanitizer.js)
@@ -1024,6 +1089,7 @@ login: async (_, { input }, context) => {
 **Finding**: No `/.well-known/security.txt` file for responsible disclosure
 
 **Recommendation**:
+
 ```
 # public/.well-known/security.txt
 Contact: security@appwhistler.com
@@ -1045,11 +1111,13 @@ Acknowledgments: https://appwhistler.com/security/hall-of-fame
 File: `backend/middleware/graphqlComplexity.js:100-197`
 
 Complexity plugin exists but:
+
 - Not integrated with Apollo Server error handling
 - No cost tracking per user
 - Fragment spreads not calculated
 
 **Recommendation**:
+
 ```javascript
 // backend/server.js
 const apolloServer = new ApolloServer({
@@ -1084,6 +1152,7 @@ const apolloServer = new ApolloServer({
 **Finding**: No limit on GraphQL query string size
 
 **Recommendation**:
+
 ```javascript
 // backend/server.js
 app.use('/graphql', express.json({ 
@@ -1112,6 +1181,7 @@ app.use('/graphql', (req, res, next) => {
 
 **Finding**:
 File: `backend/resolvers/auth.js:135`
+
 ```javascript
 const valid = await bcrypt.compare(password, user.password_hash);
 ```
@@ -1119,6 +1189,7 @@ const valid = await bcrypt.compare(password, user.password_hash);
 **Status**: ✓ bcrypt.compare() is constant-time
 
 **Note**: Timing attack not possible with bcrypt, but ensure error messages don't reveal if email exists:
+
 ```javascript
 // Good: Same error for invalid email and invalid password
 throw createGraphQLError('Invalid email or password', 'UNAUTHENTICATED');
@@ -1171,7 +1242,7 @@ async function loadSecretsFromSource() {
 
 ## 🎯 Remediation Priority
 
-### Immediate (Within 24 hours):
+### Immediate (Within 24 hours)
 
 1. ✅ Remove .env from Git and rotate ALL secrets
 2. ✅ Update vulnerable Axios dependency
@@ -1179,7 +1250,7 @@ async function loadSecretsFromSource() {
 4. ✅ Increase bcrypt rounds to 12+
 5. ✅ Strengthen password policy (12 char min, complexity)
 
-### High Priority (Within 1 week):
+### High Priority (Within 1 week)
 
 6. Replace console.* with Winston logger + sanitization
 7. Add authentication rate limiting
@@ -1187,7 +1258,7 @@ async function loadSecretsFromSource() {
 9. Fix file upload filename sanitization
 10. Add JWT algorithm specification
 
-### Medium Priority (Within 1 month):
+### Medium Priority (Within 1 month)
 
 11. Implement HTTP-only cookie authentication
 12. Add security.txt file
@@ -1235,13 +1306,13 @@ echo "⚠️  IMPORTANT: Rotate all secrets in .env immediately!"
 
 ## 📚 Compliance Impact
 
-### GDPR (EU General Data Protection Regulation):
+### GDPR (EU General Data Protection Regulation)
 
 - ❌ Article 32: Inadequate security measures (exposed secrets, weak encryption)
 - ✅ Article 17: Right to erasure implemented (`/api/v1/privacy`)
 - ⚠️ Article 33: Breach notification required if .env exposure led to data breach
 
-### OWASP Top 10 2021:
+### OWASP Top 10 2021
 
 - ✅ A01:2021 – Broken Access Control: Properly implemented
 - ❌ A02:2021 – Cryptographic Failures: Weak bcrypt rounds, exposed secrets
@@ -1295,12 +1366,13 @@ sonar-scanner
 
 ## 📞 Contact & Disclosure
 
-**Security Team**: security@appwhistler.com  
+**Security Team**: <security@appwhistler.com>  
 **Report Format**: See `/.well-known/security.txt` (to be created)  
 **PGP Key**: (To be added)
 
 **Responsible Disclosure Policy**:
-- Report vulnerabilities via security@appwhistler.com
+
+- Report vulnerabilities via <security@appwhistler.com>
 - Allow 90 days for remediation before public disclosure
 - Security researchers will be acknowledged on /security/hall-of-fame
 

@@ -1,16 +1,19 @@
 # AppWhistler Critical Issues - Migration Plan
 
 ## Executive Summary
+
 This document outlines the migration plan for fixing 33 critical and 54 high-priority issues identified in the comprehensive code audit. The plan is divided into 4 phases over 6 weeks.
 
 ---
 
 ## Phase 1: Security & Stability (Week 1-2)
+
 **Goal**: Fix all critical security vulnerabilities and prevent app crashes
 
 ### 1.1 Security Fixes (Week 1, Days 1-3)
 
-#### ✅ COMPLETED:
+#### ✅ COMPLETED
+
 - [x] Remove `.env` from Git tracking
 - [x] Fix backend dependency version conflicts
 - [x] Add missing dependencies (@sendgrid/mail, redis, bullmq)
@@ -18,7 +21,8 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 - [x] Fix SQL injection in search queries (apps.js)
 - [x] Add WebSocket cleanup function
 
-#### TODO (Days 1-3):
+#### TODO (Days 1-3)
+
 - [ ] **Rotate ALL secrets immediately**
   - Generate new JWT_SECRET (256-bit random)
   - Generate new REFRESH_TOKEN_SECRET
@@ -38,6 +42,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
   - Add CSP headers in helmet configuration
 
 - [ ] **Update vulnerable dependencies**
+
   ```bash
   cd backend
   npm update axios
@@ -72,6 +77,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
   - Update all transaction patterns to use `pool.connect()`
   - Add `finally` blocks for client release
   - Example pattern:
+
     ```javascript
     const client = await pool.connect();
     try {
@@ -92,6 +98,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
   - Test with concurrent users
 
 - [ ] **Configure pool error handler**
+
   ```javascript
   pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
@@ -144,6 +151,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ### 2.2 Database Indexing
 
 - [ ] **Add critical indexes**
+
   ```sql
   CREATE INDEX idx_users_truth_score ON users(truth_score DESC);
   CREATE INDEX idx_fact_check_votes_user_id ON fact_check_votes(user_id);
@@ -188,6 +196,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ### 3.1 Apollo Client Error Handling
 
 - [ ] **Add error link**
+
   ```javascript
   import { onError } from '@apollo/client/link/error';
   
@@ -216,6 +225,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
   - Don't retry mutations (except idempotent ones)
 
 - [ ] **Add request timeouts**
+
   ```javascript
   const httpLink = createHttpLink({
     uri: `${HTTP_URI}/graphql`,
@@ -228,6 +238,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ### 3.2 Cache Management
 
 - [ ] **Fix cache invalidation**
+
   ```javascript
   // After mutations, evict stale cache entries
   cache.evict({ fieldName: 'apps' });
@@ -258,6 +269,7 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
   - Use `useCallback` for event handlers
 
 - [ ] **Fix localStorage error handling**
+
   ```javascript
   function safeLocalStorage(key, defaultValue) {
     try {
@@ -393,22 +405,27 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ### Parallel Workstreams
 
 **Workstream 1: Security (Priority 1)**
+
 - Developer A: Secret rotation, SQL injection fixes, XSS protection
 - Timeline: Days 1-5
 
 **Workstream 2: Database (Priority 1)**
+
 - Developer B: Connection pool fixes, transactions, indexes
 - Timeline: Days 1-7
 
 **Workstream 3: Frontend (Priority 2)**
+
 - Developer C: Error Boundary, Apollo Client improvements, React optimizations
 - Timeline: Days 8-14
 
 **Workstream 4: Backend Features (Priority 2)**
+
 - Developer D: Missing mutations, authorization fixes, rate limiting
 - Timeline: Days 8-14
 
 **Workstream 5: Testing (Priority 3)**
+
 - QA Engineer: Unit tests, integration tests, E2E tests, security testing
 - Timeline: Days 15-28
 
@@ -445,22 +462,26 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ## Success Metrics
 
 ### Phase 1 Success Criteria
+
 - ✅ Zero critical security vulnerabilities
 - ✅ Zero app crashes in production (Error Boundary catches all)
 - ✅ All dependencies installed and version conflicts resolved
 - ✅ Database connection pool stable (no leaks)
 
 ### Phase 2 Success Criteria
+
 - ✅ All queries execute in <200ms (p95)
 - ✅ Zero N+1 queries in production
 - ✅ Cache hit ratio >70%
 
 ### Phase 3 Success Criteria
+
 - ✅ All mutations implemented and functional
 - ✅ Accessibility audit passes (WCAG 2.1 AA)
 - ✅ Bundle size <500KB (gzipped)
 
 ### Phase 4 Success Criteria
+
 - ✅ 70% test coverage (backend + frontend)
 - ✅ Zero high-severity security findings in pen test
 - ✅ Load test passes (1000 concurrent users, <200ms p95)
@@ -471,12 +492,14 @@ This document outlines the migration plan for fixing 33 critical and 54 high-pri
 ## Risk Assessment
 
 ### High Risk Items
+
 1. **Secret rotation in production** - Requires careful coordination
 2. **Database migrations** - Potential downtime or data loss
 3. **Cache invalidation logic** - Risk of stale data bugs
 4. **WebSocket refactor** - Risk of breaking real-time features
 
 ### Mitigation Strategies
+
 1. Rotate secrets during maintenance window with blue-green deployment
 2. Test migrations on staging with production data copy
 3. Add cache versioning and manual invalidation endpoints
