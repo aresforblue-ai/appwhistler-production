@@ -1,8 +1,8 @@
 // App-related resolvers
 const logger = require('../utils/logger');
 const cacheManager = require('../utils/cacheManager');
-const { getField } = require('./helpers');
-const { withErrorHandling } = require('../utils/errorHandler');
+const { getField, requireAuth } = require('./helpers');
+const { withErrorHandling, createGraphQLError } = require('../utils/errorHandler');
 const {
   analyzeSingleReview: analyzeSingleReviewUtil,
   analyzeAppReviews
@@ -107,6 +107,14 @@ module.exports = {
 
     // Get AI recommendations for user
     recommendedApps: async (_, { userId }, context) => {
+      // SECURITY: Require authentication
+      const { userId: authUserId } = requireAuth(context);
+      
+      // SECURITY: Users can only view their own recommendations
+      if (authUserId !== userId && context.user?.role !== 'admin') {
+        throw createGraphQLError('Unauthorized: can only view own recommendations', 'FORBIDDEN');
+      }
+      
       const result = await context.pool.query(
         `SELECT r.*, a.*
          FROM recommendations r
