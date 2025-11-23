@@ -4,9 +4,8 @@
 const ReviewAnalysisAgent = require('./ReviewAnalysisAgent');
 const SocialMediaAgent = require('./SocialMediaAgent');
 const FinancialTrackerAgent = require('./FinancialTrackerAgent');
-// Future agents:
-// const DeveloperProfileAgent = require('./DeveloperProfileAgent');
-// const SecurityAnalyzerAgent = require('./SecurityAnalyzerAgent');
+const DeveloperProfileAgent = require('./DeveloperProfileAgent');
+const SecurityAnalyzerAgent = require('./SecurityAnalyzerAgent');
 
 class AgentOrchestrator {
   constructor() {
@@ -21,8 +20,8 @@ class AgentOrchestrator {
     this.agents.reviews = new ReviewAnalysisAgent();
     this.agents.social = new SocialMediaAgent();
     this.agents.financial = new FinancialTrackerAgent();
-    // this.agents.developer = new DeveloperProfileAgent();
-    // this.agents.security = new SecurityAnalyzerAgent();
+    this.agents.developer = new DeveloperProfileAgent();
+    this.agents.security = new SecurityAnalyzerAgent();
 
     console.log(`✅ Registered ${Object.keys(this.agents).length} agents`);
   }
@@ -134,13 +133,11 @@ class AgentOrchestrator {
           score = result.data.presence_score || 50;
         } else if (agentType === 'financial') {
           score = result.data.transparency_score || 50;
+        } else if (agentType === 'developer') {
+          score = result.data.credibility_score || 50;
+        } else if (agentType === 'security') {
+          score = result.data.security_score || 50;
         }
-        // Future agents:
-        // else if (agentType === 'developer') {
-        //   score = result.data.credibility_score || 50;
-        // } else if (agentType === 'security') {
-        //   score = result.data.security_score || 50;
-        // }
 
         components[agentType] = {
           score,
@@ -276,8 +273,119 @@ class AgentOrchestrator {
       }
     }
 
-    // TODO: Developer red flags
-    // TODO: Security red flags
+    // Developer red flags
+    if (results.developer && results.developer.success) {
+      const developerData = results.developer.data;
+
+      // Critical: Multiple security breaches
+      if (developerData.incident_history.security_breaches > 0) {
+        redFlags.push({
+          severity: 'critical',
+          category: 'developer',
+          title: 'Security Breach History',
+          description: `Developer has ${developerData.incident_history.security_breaches} security breach(es) on record`,
+          score_impact: -30
+        });
+      }
+
+      // Critical: Privacy violations
+      if (developerData.incident_history.privacy_violations > 0) {
+        redFlags.push({
+          severity: 'critical',
+          category: 'developer',
+          title: 'Privacy Violation History',
+          description: `Developer has ${developerData.incident_history.privacy_violations} privacy violation(s) on record`,
+          score_impact: -35
+        });
+      }
+
+      // Major: Lawsuits
+      if (developerData.incident_history.lawsuits > 0) {
+        redFlags.push({
+          severity: 'major',
+          category: 'developer',
+          title: 'Legal Issues',
+          description: `Developer has ${developerData.incident_history.lawsuits} lawsuit(s) on record`,
+          score_impact: -20
+        });
+      }
+
+      // Minor: Low credibility
+      if (developerData.credibility_score < 40) {
+        redFlags.push({
+          severity: 'minor',
+          category: 'developer',
+          title: 'Low Developer Credibility',
+          description: `Developer credibility score is low (${developerData.credibility_score}/100)`,
+          score_impact: -10
+        });
+      }
+    }
+
+    // Security red flags
+    if (results.security && results.security.success) {
+      const securityData = results.security.data;
+
+      // Critical: Known vulnerabilities
+      if (securityData.vulnerabilities && securityData.vulnerabilities.length > 0) {
+        const critical = securityData.vulnerabilities.filter(v => v.severity === 'critical').length;
+        const high = securityData.vulnerabilities.filter(v => v.severity === 'high').length;
+
+        if (critical > 0) {
+          redFlags.push({
+            severity: 'critical',
+            category: 'security',
+            title: 'Critical Security Vulnerabilities',
+            description: `${critical} critical vulnerabilities detected`,
+            score_impact: -40
+          });
+        } else if (high > 0) {
+          redFlags.push({
+            severity: 'major',
+            category: 'security',
+            title: 'High-Risk Security Vulnerabilities',
+            description: `${high} high-risk vulnerabilities detected`,
+            score_impact: -25
+          });
+        }
+      }
+
+      // Major: Over-privileged permissions
+      if (securityData.permissions && securityData.permissions.over_privileged) {
+        redFlags.push({
+          severity: 'major',
+          category: 'security',
+          title: 'Excessive Permissions',
+          description: `App requests ${securityData.permissions.suspicious.length} suspicious permission(s)`,
+          score_impact: -20
+        });
+      }
+
+      // Major: High-risk trackers
+      if (securityData.third_party_trackers) {
+        const highRisk = securityData.third_party_trackers.filter(t => t.privacy_risk === 'high');
+        if (highRisk.length > 0) {
+          redFlags.push({
+            severity: 'major',
+            category: 'security',
+            title: 'High-Risk Third-Party Trackers',
+            description: `${highRisk.length} high-risk tracker(s) detected`,
+            score_impact: -15
+          });
+        }
+      }
+
+      // Minor: Poor privacy score
+      if (securityData.privacy_score < 50) {
+        redFlags.push({
+          severity: 'minor',
+          category: 'security',
+          title: 'Low Privacy Score',
+          description: `Privacy score is low (${securityData.privacy_score}/100)`,
+          score_impact: -10
+        });
+      }
+    }
 
     return redFlags;
   }
