@@ -393,7 +393,7 @@ function generateMonitoringReport(scans) {
  */
 async function trackBrandMention(source, url, context) {
   const mention = {
-    id: `mention_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `mention_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`,
     source,
     url,
     context,

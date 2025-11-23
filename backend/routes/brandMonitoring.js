@@ -368,8 +368,8 @@ router.get('/config', (req, res) => {
       },
       features: {
         googleAlerts: 'Free web monitoring',
-        grokAPI: process.env.GROK_API_KEY ? 'Enabled' : 'Mock mode (set GROK_API_KEY)',
-        forkScanning: 'GitHub API',
+        grokAPI: process.env.GROK_API_KEY ? 'Configured' : 'Mock mode',
+        forkScanning: process.env.GITHUB_TOKEN ? 'Enhanced (with token)' : 'Standard rate limits',
         blockchain: 'Sepolia testnet',
       },
     };

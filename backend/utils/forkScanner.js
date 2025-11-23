@@ -64,7 +64,7 @@ function getForks(page = 1, perPage = 30) {
     // Add GitHub token if available
     const githubToken = process.env.GITHUB_TOKEN;
     if (githubToken) {
-      options.headers['Authorization'] = `token ${githubToken}`;
+      options.headers['Authorization'] = `Bearer ${githubToken}`;
     }
 
     const req = https.request(options, (res) => {
@@ -108,7 +108,7 @@ function getReadmeContent(owner, repo) {
 
     const githubToken = process.env.GITHUB_TOKEN;
     if (githubToken) {
-      options.headers['Authorization'] = `token ${githubToken}`;
+      options.headers['Authorization'] = `Bearer ${githubToken}`;
     }
 
     const req = https.request(options, (res) => {
@@ -147,7 +147,7 @@ function getPackageJson(owner, repo, path = 'package.json') {
 
     const githubToken = process.env.GITHUB_TOKEN;
     if (githubToken) {
-      options.headers['Authorization'] = `token ${githubToken}`;
+      options.headers['Authorization'] = `Bearer ${githubToken}`;
     }
 
     const req = https.request(options, (res) => {
