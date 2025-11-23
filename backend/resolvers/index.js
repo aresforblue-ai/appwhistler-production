@@ -7,6 +7,7 @@ const reviewsResolvers = require('./reviews');
 const adminResolvers = require('./admin');
 const bountiesResolvers = require('./bounties');
 const blockchainResolvers = require('./blockchain');
+const truthAnalysisResolvers = require('./truthAnalysis');
 
 // Helper function to merge resolver objects
 function mergeResolvers(...resolverModules) {
@@ -51,7 +52,8 @@ const resolvers = mergeResolvers(
   reviewsResolvers,
   adminResolvers,
   bountiesResolvers,
-  blockchainResolvers
+  blockchainResolvers,
+  truthAnalysisResolvers
 );
 
 module.exports = resolvers;
