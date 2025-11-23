@@ -11,6 +11,14 @@
 
 const axios = require('axios');
 
+// Import external agent integrations
+const { classifyReview: classifyWithSayam } = require('../integrations/sayamalt-svm');
+const { analyzeReview: analyzeWithVader } = require('../integrations/thedeveloper-vader');
+const { analyzeWithBERT } = require('../integrations/immanuelsandeep-bert');
+const { analyzeWithCheckup } = require('../integrations/checkup-scraper');
+const { analyzeAppMedia } = require('../integrations/kitware-osint');
+const { analyzeAppDescription } = require('../integrations/cofacts-crowdsource');
+
 // ============================================================================
 // AGENT REGISTRY - All Available Agents
 // ============================================================================
@@ -104,25 +112,19 @@ const AGENT_REGISTRY = {
 class ExternalAgentAdapter {
   /**
    * Sayam ML Classifier Adapter
-   * Connects to SayamAlt's Flask API
+   * Uses JavaScript port of SayamAlt's SVM classifier
    */
   static async callSayamML(reviewText) {
     try {
-      const response = await axios.post(
-        AGENT_REGISTRY.external.sayamML.endpoint,
-        {
-          review: reviewText,
-          features: ['tfidf', 'word2vec']
-        },
-        { timeout: 5000 }
-      );
+      const result = await classifyWithSayam(reviewText);
 
       return {
         agentName: 'SayamML',
-        confidence: response.data.fake_probability * 100,
-        verdict: response.data.prediction === 'FAKE' ? 'LIKELY_FAKE' : 'LIKELY_GENUINE',
-        evidence: response.data.features || [],
-        source: 'EXTERNAL_ML'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_ML',
+        details: result
       };
     } catch (error) {
       console.error('[SayamML] Error:', error.message);
@@ -132,30 +134,20 @@ class ExternalAgentAdapter {
 
   /**
    * Developer306 Sentiment Adapter
-   * Connects to Flask sentiment analysis API
+   * Uses JavaScript port of VADER sentiment analysis
    */
   static async callDeveloper306(reviewText, rating) {
     try {
-      const response = await axios.post(
-        AGENT_REGISTRY.external.developer306.endpoint,
-        {
-          review: reviewText,
-          rating: rating,
-          include_sentiment: true
-        },
-        { timeout: 5000 }
-      );
+      const result = await analyzeWithVader(reviewText, rating);
 
       return {
         agentName: 'Developer306',
-        confidence: response.data.confidence * 100,
-        verdict: response.data.is_fake ? 'LIKELY_FAKE' : 'LIKELY_GENUINE',
-        sentiment: response.data.sentiment,
-        evidence: [
-          `Sentiment: ${response.data.sentiment.compound}`,
-          `Rating consistency: ${response.data.rating_match ? 'MATCH' : 'MISMATCH'}`
-        ],
-        source: 'EXTERNAL_ML'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        sentiment: result.sentimentMismatch.sentiment,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_ML',
+        details: result
       };
     } catch (error) {
       console.error('[Developer306] Error:', error.message);
@@ -165,28 +157,19 @@ class ExternalAgentAdapter {
 
   /**
    * BERT Transformer Adapter
-   * Connects to ImmanuelSandeep's BERT model
+   * Uses JavaScript port with API fallback to BERT model
    */
   static async callBERTTransformer(reviewText) {
     try {
-      const response = await axios.post(
-        AGENT_REGISTRY.external.bertTransformer.endpoint,
-        {
-          text: reviewText,
-          model: 'bert-base-uncased'
-        },
-        { timeout: 10000 } // BERT can be slower
-      );
+      const result = await analyzeWithBERT(reviewText);
 
       return {
         agentName: 'BERT',
-        confidence: response.data.fake_score * 100,
-        verdict: response.data.label === 'CG' ? 'HIGHLY_LIKELY_FAKE' : 'LIKELY_GENUINE',
-        evidence: [
-          `Computer-generated probability: ${response.data.cg_probability}`,
-          `Attention weights: ${response.data.attention_summary}`
-        ],
-        source: 'EXTERNAL_TRANSFORMER'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_TRANSFORMER',
+        details: result
       };
     } catch (error) {
       console.error('[BERT] Error:', error.message);
@@ -196,62 +179,23 @@ class ExternalAgentAdapter {
 
   /**
    * Cofacts Community Adapter
-   * Queries g0v crowdsourced fact-check database
+   * Uses integration module for g0v fact-checking
    */
   static async callCofacts(claimText) {
     try {
-      const query = `
-        query SearchArticles($text: String!) {
-          ListArticles(
-            filter: { moreLikeThis: { like: $text } }
-            first: 5
-          ) {
-            edges {
-              node {
-                text
-                articleReplies {
-                  reply {
-                    type
-                    text
-                  }
-                  status
-                }
-              }
-            }
-          }
-        }
-      `;
+      const result = await analyzeAppDescription(claimText);
 
-      const response = await axios.post(
-        AGENT_REGISTRY.external.cofacts.endpoint,
-        {
-          query,
-          variables: { text: claimText }
-        },
-        { timeout: 5000 }
-      );
-
-      const articles = response.data.data.ListArticles.edges;
-
-      if (articles.length === 0) {
+      if (!result || result.verdict === 'NO_COMMUNITY_DATA') {
         return null; // No community data
       }
 
-      // Check if any similar claims were marked as rumors
-      const rumorCount = articles.filter(a =>
-        a.node.articleReplies.some(r => r.reply.type === 'RUMOR')
-      ).length;
-
-      const confidence = (rumorCount / articles.length) * 100;
-
       return {
         agentName: 'Cofacts',
-        confidence,
-        verdict: confidence > 50 ? 'SUSPICIOUS' : 'LIKELY_GENUINE',
-        evidence: articles.map(a =>
-          `Community flagged: ${a.node.articleReplies[0]?.reply.text.substring(0, 100)}`
-        ),
-        source: 'EXTERNAL_CROWDSOURCE'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_CROWDSOURCE',
+        details: result
       };
     } catch (error) {
       console.error('[Cofacts] Error:', error.message);
@@ -261,26 +205,19 @@ class ExternalAgentAdapter {
 
   /**
    * Check-up Scraper Adapter
-   * Real-time claim scraping
+   * Uses integration module for claim scraping
    */
   static async callCheckup(url) {
     try {
-      const response = await axios.post(
-        AGENT_REGISTRY.external.checkup.endpoint,
-        {
-          url,
-          scrape_ads: true,
-          classify_theme: true
-        },
-        { timeout: 8000 }
-      );
+      const result = await analyzeWithCheckup(url);
 
       return {
         agentName: 'Checkup',
-        confidence: response.data.disinfo_score || 0,
-        verdict: response.data.has_misinfo ? 'SUSPICIOUS' : 'LIKELY_GENUINE',
-        evidence: response.data.flagged_claims || [],
-        source: 'EXTERNAL_SCRAPER'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_SCRAPER',
+        details: result
       };
     } catch (error) {
       console.error('[Checkup] Error:', error.message);
@@ -290,29 +227,23 @@ class ExternalAgentAdapter {
 
   /**
    * Kitware OSINT Adapter
-   * Deepfake and media manipulation detection
+   * Uses integration module for media manipulation detection
    */
-  static async callKitware(mediaUrl) {
+  static async callKitware(appData) {
     try {
-      const response = await axios.post(
-        AGENT_REGISTRY.external.kitware.endpoint,
-        {
-          media_url: mediaUrl,
-          analysis_types: ['deepfake', 'exif', 'attribution']
-        },
-        { timeout: 15000 } // Media analysis can be slow
-      );
+      const result = await analyzeAppMedia(appData);
+
+      if (!result || result.verdict === 'NO_MEDIA_TO_ANALYZE') {
+        return null;
+      }
 
       return {
         agentName: 'Kitware',
-        confidence: response.data.manipulation_score || 0,
-        verdict: response.data.is_manipulated ? 'SUSPICIOUS' : 'LIKELY_GENUINE',
-        evidence: [
-          `Deepfake probability: ${response.data.deepfake_prob}`,
-          `EXIF inconsistencies: ${response.data.exif_flags}`,
-          `Attribution: ${response.data.attribution_source}`
-        ],
-        source: 'EXTERNAL_OSINT'
+        confidence: result.confidence,
+        verdict: result.verdict,
+        evidence: result.redFlags.map(f => f.description),
+        source: 'EXTERNAL_OSINT',
+        details: result
       };
     } catch (error) {
       console.error('[Kitware] Error:', error.message);

@@ -1,0 +1,228 @@
+version: '3.8'
+
+# AppWhistler Multi-Agent System Docker Compose
+# Deploys 11 agents: 5 core + 6 external detection systems
+
+services:
+  # ========== MAIN APPLICATION ==========
+
+  appwhistler:
+    build: ./backend
+    container_name: appwhistler-api
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - PORT=5000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=appwhistler
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET}
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
+
+      # External agent endpoints
+      - SAYAM_ML_ENDPOINT=http://sayam-ml:5001/predict
+      - DEVELOPER306_ENDPOINT=http://dev306:5002/analyze
+      - BERT_ENDPOINT=http://bert:5003/classify
+      - CHECKUP_ENDPOINT=http://checkup:5004/scrape
+      - KITWARE_ENDPOINT=http://kitware:5005/analyze
+      # Cofacts uses public API - no local endpoint needed
+
+    depends_on:
+      - postgres
+      - redis
+      - sayam-ml
+      - dev306
+      - bert
+      - checkup
+      - kitware
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+
+  # ========== DATABASE ==========
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: appwhistler-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=appwhistler
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+
+  # ========== REDIS CACHE ==========
+
+  redis:
+    image: redis:7-alpine
+    container_name: appwhistler-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # ========== EXTERNAL AGENT 1: SayamAlt ML ==========
+
+  sayam-ml:
+    build:
+      context: ./external-agents/sayam-ml
+      dockerfile: Dockerfile
+    container_name: sayam-ml
+    ports:
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+    # Note: This service requires cloning github.com/SayamAlt/Fake-Reviews-Detection
+    # See EXTERNAL_AGENTS_SETUP.md for instructions
+
+  # ========== EXTERNAL AGENT 2: Developer306 VADER ==========
+
+  dev306:
+    build:
+      context: ./external-agents/dev306
+      dockerfile: Dockerfile
+    container_name: dev306-vader
+    ports:
+      - "5002:5002"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+    # Note: This service requires cloning github.com/the-developer-306/Fake-Review-Detector
+    # See EXTERNAL_AGENTS_SETUP.md for instructions
+
+  # ========== EXTERNAL AGENT 3: BERT Transformer ==========
+
+  bert:
+    build:
+      context: ./external-agents/bert
+      dockerfile: Dockerfile
+    container_name: bert-transformer
+    ports:
+      - "5003:5003"
+    environment:
+      - FLASK_ENV=production
+      - TRANSFORMERS_CACHE=/cache
+    volumes:
+      - bert-cache:/cache
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    # Note: BERT requires significant memory (2GB+)
+    # For production, use GPU instance or consider CPU-only variant
+    # See EXTERNAL_AGENTS_SETUP.md for instructions
+
+  # ========== EXTERNAL AGENT 4: Check-up Scraper ==========
+
+  checkup:
+    build:
+      context: ./external-agents/checkup
+      dockerfile: Dockerfile
+    container_name: checkup-scraper
+    ports:
+      - "5004:5004"
+    environment:
+      - FLASK_ENV=production
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+
+  # ========== EXTERNAL AGENT 5: Kitware OSINT ==========
+
+  kitware:
+    build:
+      context: ./external-agents/kitware
+      dockerfile: Dockerfile
+    container_name: kitware-osint
+    ports:
+      - "5005:5005"
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - kitware-cache:/cache
+    networks:
+      - appwhistler-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1.5G
+        reservations:
+          memory: 512M
+
+  # ========== EXTERNAL AGENT 6: Cofacts (Public API) ==========
+  # Cofacts uses public GraphQL API (https://cofacts-api.g0v.tw/graphql)
+  # No container needed - accessed directly from main app
+
+# ========== NETWORKS ==========
+
+networks:
+  appwhistler-network:
+    driver: bridge
+
+# ========== VOLUMES ==========
+
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  bert-cache:
+    driver: local
+  kitware-cache:
+    driver: local
+
+# ========== USAGE ==========
+#
+# Start all services:
+#   docker-compose up -d
+#
+# Start only core services (no external agents):
+#   docker-compose up -d appwhistler postgres redis
+#
+# View logs:
+#   docker-compose logs -f appwhistler
+#   docker-compose logs -f sayam-ml
+#
+# Scale agents:
+#   docker-compose up -d --scale sayam-ml=3
+#
+# Stop all services:
+#   docker-compose down
+#
+# Reset everything (WARNING: deletes data):
+#   docker-compose down -v
+#
+# Health checks:
+#   curl http://localhost:5000/health
+#   curl http://localhost:5001/health  # SayamML
+#   curl http://localhost:5002/health  # Dev306
+#   curl http://localhost:5003/health  # BERT
+#
+# Production deployment:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
