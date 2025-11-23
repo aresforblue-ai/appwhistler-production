@@ -209,14 +209,57 @@ class SayamSVMClassifier {
     };
 
     const fakeScore = this.classify(reviewText);
+    const indicators = this.getMatchedIndicators(text);
 
     return {
       fakeScore,
       verdict: fakeScore >= 70 ? 'LIKELY_FAKE' : fakeScore >= 40 ? 'SUSPICIOUS' : 'LIKELY_GENUINE',
       features,
-      indicators: this.getMatchedIndicators(text),
-      confidence: this.calculateConfidence(features)
+      indicators,
+      confidence: this.calculateConfidence(features),
+      redFlags: this.generateRedFlags(fakeScore, features, indicators)
     };
+  }
+
+  /**
+   * Generate red flags based on analysis
+   */
+  generateRedFlags(fakeScore, features, indicators) {
+    const flags = [];
+
+    if (features.genericScore > 50) {
+      flags.push({
+        category: 'Generic Patterns',
+        severity: 'HIGH',
+        description: `High generic phrase usage (score: ${features.genericScore})`
+      });
+    }
+
+    if (features.patternScore > 60) {
+      flags.push({
+        category: 'GPT Pattern',
+        severity: 'HIGH',
+        description: 'AI-generated language patterns detected'
+      });
+    }
+
+    if (features.lengthScore > 60) {
+      flags.push({
+        category: 'Suspicious Length',
+        severity: 'MEDIUM',
+        description: 'Review length suspicious (too short or too long)'
+      });
+    }
+
+    if (indicators.some(i => i.category === 'promotional')) {
+      flags.push({
+        category: 'Promotional Language',
+        severity: 'HIGH',
+        description: 'Contains promotional keywords'
+      });
+    }
+
+    return flags;
   }
 
   /**
@@ -271,5 +314,8 @@ function trainClassifier(labeledReviews) {
 module.exports = {
   classifyReview,
   trainClassifier,
-  SayamSVMClassifier
+  SayamSVMClassifier,
+  // Export for testing
+  calculateGenericScore: (text) => classifier.calculateGenericScore(text),
+  calculateLengthScore: (text) => classifier.calculateLengthScore(text)
 };
