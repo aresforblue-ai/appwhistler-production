@@ -20,6 +20,10 @@ const { analyzeWithCheckup } = require('../integrations/checkup-scraper');
 const { analyzeAppMedia } = require('../integrations/kitware-osint');
 const { analyzeAppDescription } = require('../integrations/cofacts-crowdsource');
 
+// Import IP and Device analysis
+const { analyzeIPAddress, analyzeIPVelocity } = require('./ipAnalysis');
+const { analyzeDeviceFingerprint, detectDeviceReuse, analyzeDeviceSwitching } = require('./deviceFingerprinting');
+
 // ============================================================================
 // AGENT REGISTRY - All Available Agents
 // ============================================================================
@@ -53,8 +57,20 @@ const AGENT_REGISTRY = {
     },
     duplicate: {
       name: 'Duplicate Detection',
-      weight: 0.10,
+      weight: 0.08,
       handler: require('./fakeReviewDetector').detectDuplicates,
+      type: 'INTERNAL'
+    },
+    ipAnalysis: {
+      name: 'IP Address Analysis',
+      weight: 0.08,
+      handler: null, // Handled separately in analyzeWithAllAgents
+      type: 'INTERNAL'
+    },
+    deviceFingerprint: {
+      name: 'Device Fingerprinting',
+      weight: 0.07,
+      handler: null, // Handled separately in analyzeWithAllAgents
       type: 'INTERNAL'
     }
   },
@@ -269,7 +285,10 @@ class MultiAgentOrchestrator {
       url,
       mediaUrl,
       userContext,
-      allReviews
+      allReviews,
+      ipAddress,
+      deviceFingerprint,
+      pool
     } = input;
 
     logger.info('[Orchestrator] Starting multi-agent analysis...');
@@ -278,6 +297,10 @@ class MultiAgentOrchestrator {
     const agentPromises = [
       // Core agents (always run)
       this.runCoreAgents(reviewText, rating, userContext, allReviews),
+
+      // IP and Device analysis (NEW!)
+      ipAddress && pool ? this.runIPAnalysis(ipAddress, pool) : null,
+      deviceFingerprint && pool ? this.runDeviceAnalysis(deviceFingerprint, userContext?.userId, pool) : null,
 
       // External ML agents (run if available)
       ExternalAgentAdapter.callSayamML(reviewText),
@@ -350,6 +373,67 @@ class MultiAgentOrchestrator {
       evidence: result.redFlags.map(f => f.description),
       source: 'INTERNAL'
     };
+  }
+
+  /**
+   * Run IP address analysis
+   */
+  static async runIPAnalysis(ipAddress, pool) {
+    try {
+      const [ipAnalysis, velocity] = await Promise.all([
+        analyzeIPAddress(ipAddress),
+        analyzeIPVelocity(ipAddress, pool)
+      ]);
+
+      const combinedScore = Math.round((ipAnalysis.riskScore + velocity.riskScore) / 2);
+      const allFlags = [...ipAnalysis.flags, ...velocity.flags];
+
+      return {
+        agentName: 'IP Analysis',
+        confidence: combinedScore,
+        verdict: combinedScore >= 70 ? 'SUSPICIOUS_IP' :
+                 combinedScore >= 40 ? 'CAUTION' :
+                 'NORMAL_IP',
+        evidence: allFlags.map(f => f.description),
+        source: 'INTERNAL',
+        details: { ipAnalysis, velocity }
+      };
+    } catch (error) {
+      logger.error('[IP Analysis] Error:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Run device fingerprint analysis
+   */
+  static async runDeviceAnalysis(deviceFingerprint, userId, pool) {
+    try {
+      const [fpAnalysis, deviceReuse, deviceSwitching] = await Promise.all([
+        analyzeDeviceFingerprint(deviceFingerprint),
+        detectDeviceReuse(deviceFingerprint.fingerprint, pool),
+        userId ? analyzeDeviceSwitching(userId, pool) : Promise.resolve({ riskScore: 0, flags: [] })
+      ]);
+
+      const combinedScore = Math.round(
+        (fpAnalysis.riskScore + deviceReuse.riskScore + deviceSwitching.riskScore) / 3
+      );
+      const allFlags = [...fpAnalysis.flags, ...deviceReuse.flags, ...deviceSwitching.flags];
+
+      return {
+        agentName: 'Device Fingerprinting',
+        confidence: combinedScore,
+        verdict: combinedScore >= 70 ? 'SUSPICIOUS_DEVICE' :
+                 combinedScore >= 40 ? 'CAUTION' :
+                 'NORMAL_DEVICE',
+        evidence: allFlags.map(f => f.description),
+        source: 'INTERNAL',
+        details: { fpAnalysis, deviceReuse, deviceSwitching }
+      };
+    } catch (error) {
+      logger.error('[Device Analysis] Error:', error.message);
+      return null;
+    }
   }
 
   /**
