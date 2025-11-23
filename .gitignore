@@ -7,6 +7,23 @@ backend/node_modules/
 .env
 .env.local
 .env.production
+.env.development
+.env.*.local
+backend/.env
+backend/.env.local
+backend/.env.production
+backend/.env.development
+
+# Secrets and credentials
+secrets/
+credentials/
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+.secrets
+config/secrets.local.js
 
 # Build outputs
 dist/

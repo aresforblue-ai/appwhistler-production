@@ -22,6 +22,7 @@ AppWhistler is a full-stack web application that provides verified, trustworthy 
 - [Deployment](#deployment)
 - [Project Structure](#project-structure)
 - [API Documentation](#api-documentation)
+- [Security](#security)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
 - [License](#license)
@@ -749,6 +750,21 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 7. Push to your fork: `git push origin feature/your-feature`
 8. Open a pull request
 
+## Security
+
+Security is a top priority for AppWhistler. We've implemented comprehensive security measures and documentation:
+
+- **Report vulnerabilities**: See [SECURITY.md](SECURITY.md) for our security policy and how to report issues
+- **Security features**: JWT authentication, rate limiting, input validation, CORS protection, and more
+- **Automated scanning**: CodeQL and Dependabot keep dependencies secure
+- **Best practices**: See [GITHUB_SETUP.md](GITHUB_SETUP.md) for repository configuration
+
+For developers:
+- Never commit `.env` files - use `.env.example` as a template
+- Run `./scripts/security-scan.sh` before deployment
+- Keep dependencies updated with `npm audit`
+- Review [PRE_LAUNCH_CHECKLIST.md](PRE_LAUNCH_CHECKLIST.md) before going to production
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -756,8 +772,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Documentation**: Check [CLAUDE.md](CLAUDE.md) for detailed architecture
-- **Issues**: Report bugs via [GitHub Issues](https://github.com/your-username/appwhistler-production/issues)
-- **Discussions**: Join our [Discord community](#) (coming soon)
+- **Security**: See [SECURITY.md](SECURITY.md) for security policy
+- **Issues**: Report bugs via [GitHub Issues](https://github.com/aresforblue-ai/appwhistler-production/issues)
+- **Discussions**: Join [GitHub Discussions](https://github.com/aresforblue-ai/appwhistler-production/discussions) for Q&A
 - **Email**: support@appwhistler.com
 
 ## Acknowledgments
