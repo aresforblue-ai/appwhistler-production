@@ -190,11 +190,13 @@ query AnalyzeSingleReview {
 ### **Layer 1: Pattern Analysis**
 
 **Timing Burst Detection:**
+
 - Scans for 10+ reviews within 1-hour windows
 - Detects coordinated timing (multiple reviews at same minute)
 - Flags abnormal velocity (100+ reviews in 24 hours)
 
 **Rating Distribution Analysis:**
+
 - Detects unnatural 5-star concentration (>80%)
 - Identifies polarization (mostly 1-star or 5-star)
 - Catches recent manipulation (last 20 reviews all 5-star)
@@ -215,11 +217,13 @@ const gptPatterns = [
 ```
 
 **Template Detection:**
+
 - Identifies repetitive phrases ("great app", "highly recommend", "easy to use")
 - Flags reviews with 3+ template phrases
 - Uses tokenization to find exact and near-duplicates
 
 **Spam Keyword Detection:**
+
 - Blocks promotional links (http://, bit.ly)
 - Flags discount/coupon codes
 - Detects "click here", "download now", etc.
@@ -227,14 +231,17 @@ const gptPatterns = [
 ### **Layer 3: Behavioral Signals**
 
 **New Account Spam:**
+
 - Flags reviews posted <24 hours after account creation
 - Confidence boost: +30%
 
 **Bulk Reviewer Detection:**
+
 - Identifies users with 50+ total reviews
 - Confidence boost: +15%
 
 **Single-Purpose Accounts:**
+
 - Detects accounts that only review one app
 - Common in paid review schemes
 - Confidence boost: +20%
@@ -242,11 +249,13 @@ const gptPatterns = [
 ### **Layer 4: Graph Analysis**
 
 **Network Detection:**
+
 - Builds user-to-user similarity graphs
 - Identifies clusters of users reviewing at similar times
 - Flags coordinated campaigns (>10% clustered users)
 
 **Future Enhancements:**
+
 - IP pattern analysis (requires IP logging)
 - Device fingerprinting
 - Social graph analysis
@@ -266,6 +275,7 @@ totalScore =
 ```
 
 **Verdict Thresholds:**
+
 - **80-100**: `HIGHLY_LIKELY_FAKE` (immediate action)
 - **60-79**: `LIKELY_FAKE` (investigate)
 - **40-59**: `SUSPICIOUS` (monitor)
@@ -277,18 +287,21 @@ totalScore =
 ## 📊 Performance Characteristics
 
 ### **Speed:**
+
 - Single review analysis: **~5ms**
 - 100 reviews batch: **~200ms**
 - 1,000 reviews: **~1.5s**
 - 10,000 reviews: **~12s**
 
 ### **Accuracy (Estimated):**
+
 - **GPT-generated reviews**: 90%+ detection rate
 - **Template reviews**: 85%+ detection rate
 - **Coordinated campaigns**: 80%+ detection rate
 - **Overall precision**: ~85% (needs real-world testing)
 
 ### **False Positive Rate:**
+
 - Estimated: **<10%** (conservative scoring reduces false positives)
 - Threshold tuning available per use case
 
@@ -309,6 +322,7 @@ totalScore =
 | **Customizable** | ✅ | Limited | ❌ | ❌ | ❌ |
 
 ### **What Palantir Has That We Don't (Yet):**
+
 - ❌ IP address analysis (we can add this)
 - ❌ Device fingerprinting (we can add this)
 - ❌ Hundreds of engineers fine-tuning ML models
@@ -316,6 +330,7 @@ totalScore =
 - ❌ Government-grade infrastructure
 
 ### **What We Have That Palantir Doesn't:**
+
 - ✅ **Open source** (anyone can audit/improve)
 - ✅ **Free to use** (no licensing fees)
 - ✅ **Built for apps** (not general-purpose analytics)
@@ -329,31 +344,41 @@ totalScore =
 Want to go even deeper? We can add:
 
 ### **1. Deep Learning Model**
+
 Train a neural network on labeled fake/real reviews:
+
 - Use TensorFlow.js or ONNX Runtime
 - ~95% accuracy after training on 10k+ labeled reviews
 - **Time to build**: 2-3 hours
 
 ### **2. Image/Video Review Analysis**
+
 Detect fake product photos in reviews:
+
 - Use reverse image search APIs
 - Detect stock photos vs. authentic user photos
 - **Time to build**: 1 hour
 
 ### **3. Sentiment Inconsistency Detection**
+
 Flag reviews where text sentiment doesn't match rating:
+
 - 1-star review with positive text = likely fake
 - 5-star review with negative text = manipulation
 - **Time to build**: 30 minutes
 
 ### **4. Cross-Platform Review Comparison**
+
 Compare reviews across App Store, Google Play, web:
+
 - Detect review bombing on one platform
 - Identify platform-specific manipulation
 - **Time to build**: 1 hour
 
 ### **5. Real-Time Monitoring Dashboard**
+
 Live feed of suspicious reviews as they come in:
+
 - WebSocket-based real-time updates
 - Admin dashboard with charts/graphs
 - **Time to build**: 2 hours
@@ -365,6 +390,7 @@ Live feed of suspicious reviews as they come in:
 **We just built in 30 minutes what took most companies 6-12 months and millions in funding.**
 
 This isn't vaporware. This is **production-ready code** that:
+
 - ✅ Works right now
 - ✅ Scales to millions of reviews
 - ✅ Catches real fake reviews
@@ -388,6 +414,7 @@ Full GraphQL schema available in `backend/schema.js`.
 **Authentication**: Optional (public read, auth required for write)
 
 **Rate Limits**:
+
 - Anonymous: 100 req/hour
 - Authenticated: 1,000 req/hour
 - Enterprise: Custom

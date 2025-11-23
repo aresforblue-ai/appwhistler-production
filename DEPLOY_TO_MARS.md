@@ -14,6 +14,7 @@ cd /home/user/appwhistler-production/backend
 ```
 
 That's it. The script does everything:
+
 - ✅ Installs Fly CLI (if needed)
 - ✅ Logs you in
 - ✅ Creates app + PostgreSQL database
@@ -91,7 +92,7 @@ zip -r ../../appwhistler-extension-v1.0.0.zip . \
 
 ## 🌐 **STEP 5: Submit to Chrome Web Store (10 minutes)**
 
-1. Go to: https://chrome.google.com/webstore/devconsole/register
+1. Go to: <https://chrome.google.com/webstore/devconsole/register>
 2. Pay $5 fee
 3. Upload: `appwhistler-extension-v1.0.0.zip`
 4. Fill in:
@@ -99,6 +100,7 @@ zip -r ../../appwhistler-extension-v1.0.0.zip . \
 **Name**: AppWhistler - Truth Ratings for Apps
 
 **Description**:
+
 ```
 Instantly see truth ratings for any app mentioned on X/Twitter.
 
@@ -143,6 +145,7 @@ Load extension locally while waiting for approval:
 ```
 
 **Tweet Template**:
+
 ```
 🎺 Just launched AppWhistler Beta
 
@@ -175,12 +178,14 @@ DM me for early access!
 ## 🚨 **IF SOMETHING BREAKS:**
 
 **Backend won't deploy:**
+
 ```bash
 flyctl logs --app appwhistler-api
 # Check errors, fix, redeploy
 ```
 
 **Extension doesn't work:**
+
 ```bash
 # Open Chrome DevTools (F12)
 # Check Console for errors
@@ -188,6 +193,7 @@ flyctl logs --app appwhistler-api
 ```
 
 **Database connection fails:**
+
 ```bash
 flyctl postgres connect -a appwhistler-api-db
 # If this fails, recreate: flyctl postgres create
@@ -198,26 +204,31 @@ flyctl postgres connect -a appwhistler-api-db
 ## 🎯 **THE MULTIPLICATION PLAN**
 
 **Week 1: Launch**
+
 - Deploy backend ✅
 - Submit extension ✅
 - Get 100 users
 
 **Week 2: Traction**
+
 - 1,000 users
 - ProductHunt launch
 - First press coverage
 
 **Week 3: Growth**
+
 - 10,000 users
 - VC interest
 - Revenue model
 
 **Week 4: Scale**
+
 - 50,000 users
 - Seed funding
 - Team of 3
 
 **Month 3: Mars**
+
 - 100,000 users
 - Series A
 - Industry standard

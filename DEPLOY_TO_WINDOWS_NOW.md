@@ -195,13 +195,13 @@ npm run dev
 
 ## 🔍 Verify Deployment
 
-### Check URLs:
+### Check URLs
 
-1. **Frontend**: http://localhost:3000
-2. **Backend Health**: http://localhost:5000/health
-3. **GraphQL**: http://localhost:5000/graphql
+1. **Frontend**: <http://localhost:3000>
+2. **Backend Health**: <http://localhost:5000/health>
+3. **GraphQL**: <http://localhost:5000/graphql>
 
-### Expected Results:
+### Expected Results
 
 ✅ Frontend loads with AppWhistler interface
 ✅ Health check returns `{"status":"healthy"}`
@@ -309,9 +309,9 @@ After deployment, read these files in order:
 You'll know deployment succeeded when:
 
 ✅ Both servers start without errors
-✅ Frontend shows AppWhistler UI at http://localhost:3000
-✅ Backend health check passes at http://localhost:5000/health
-✅ GraphQL playground works at http://localhost:5000/graphql
+✅ Frontend shows AppWhistler UI at <http://localhost:3000>
+✅ Backend health check passes at <http://localhost:5000/health>
+✅ GraphQL playground works at <http://localhost:5000/graphql>
 ✅ No console errors in browser (F12)
 ✅ Database queries work
 
