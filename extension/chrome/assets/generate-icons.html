@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate AppWhistler Icons</title>
+</head>
+<body>
+  <h1>Icon Generator</h1>
+  <p>Right-click each canvas and "Save image as..."</p>
+
+  <h2>16x16</h2>
+  <canvas id="icon16" width="16" height="16"></canvas>
+
+  <h2>48x48</h2>
+  <canvas id="icon48" width="48" height="48"></canvas>
+
+  <h2>128x128</h2>
+  <canvas id="icon128" width="128" height="128"></canvas>
+
+  <script>
+    function drawIcon(canvas, size) {
+      const ctx = canvas.getContext('2d');
+
+      // Background gradient (blue to purple)
+      const gradient = ctx.createLinearGradient(0, 0, size, size);
+      gradient.addColorStop(0, '#3b82f6');
+      gradient.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // Whistle emoji
+      ctx.font = `${size * 0.7}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🎺', size / 2, size / 2);
+    }
+
+    drawIcon(document.getElementById('icon16'), 16);
+    drawIcon(document.getElementById('icon48'), 48);
+    drawIcon(document.getElementById('icon128'), 128);
+  </script>
+</body>
+</html>
