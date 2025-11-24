@@ -798,8 +798,7 @@ See [LICENSE](LICENSE) and [ASSETS_LICENSE.md](ASSETS_LICENSE.md) for complete t
 - **Security**: See [SECURITY.md](SECURITY.md) for security policy
 - **Issues**: Report bugs via [GitHub Issues](https://github.com/aresforblue-ai/appwhistler-production/issues)
 - **Discussions**: Join [GitHub Discussions](https://github.com/aresforblue-ai/appwhistler-production/discussions) for Q&A
-- **Email**: support@appwhistler.com
-
+- **Email**: appwhistler@icloud.com
 ## Acknowledgments
 
 - Built with [React](https://react.dev/), [GraphQL](https://graphql.org/), and [PostgreSQL](https://www.postgresql.org/)
