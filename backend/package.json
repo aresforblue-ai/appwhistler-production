@@ -13,7 +13,7 @@
     "test:verbose": "jest --verbose"
   },
   "dependencies": {
-    "@sentry/node": "^10.26.0",
+    "@sentry/node": "^10.27.0",
     "apollo-server-express": "^3.13.0",
     "bcrypt": "^6.0.0",
     "bull": "^4.12.2",
