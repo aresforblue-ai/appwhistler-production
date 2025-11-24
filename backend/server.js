@@ -145,6 +145,10 @@ app.use('/api/v1/privacy', createPrivacyRouter(pool));
 const uploadRouter = require('./routes/upload');
 app.use('/api/v1/upload', uploadRouter);
 
+// Brand monitoring and protection endpoints
+const brandMonitoringRouter = require('./routes/brandMonitoring');
+app.use('/api/v1/brand', brandMonitoringRouter);
+
 // Import constants
 const { TRENDING_APPS_LIMIT } = require('./constants/pagination');
 

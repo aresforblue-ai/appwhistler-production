@@ -41,18 +41,33 @@ We are committed to providing a welcoming and inclusive environment for everyone
 Before contributing, ensure you have:
 
 1. Read the [README.md](README.md) for installation instructions
-2. Set up your local development environment
-3. Reviewed the [CLAUDE.md](CLAUDE.md) for architecture details
-4. Familiarized yourself with the codebase structure
+2. **Read and agree to the [CLA.md](CLA.md)** (Contributor License Agreement)
+3. Set up your local development environment
+4. Reviewed the [CLAUDE.md](CLAUDE.md) for architecture details
+5. Familiarized yourself with the codebase structure
+6. Understood brand protection requirements in [BRAND_PROTECTION.md](BRAND_PROTECTION.md)
+
+### Contributor License Agreement (CLA)
+
+**Important**: By contributing to AppWhistler, you agree to our [Contributor License Agreement (CLA)](CLA.md).
+
+**Key Points**:
+- You grant us license to use your contributions
+- You confirm you have the right to contribute
+- **If you fork this project**: You must rebrand and remove all AppWhistler trademarks (see CLA Section 4)
+- **Brand protection**: The AppWhistler name, logo, and branding are protected
+
+**How to Sign**: Submit a pull request (automatic agreement) or add your name to CONTRIBUTORS.md
 
 ### First-Time Contributors
 
 If this is your first contribution:
 
-1. Look for issues labeled `good-first-issue` or `help-wanted`
-2. Comment on the issue to express interest
-3. Wait for maintainer approval before starting work
-4. Ask questions if anything is unclear
+1. **Read the [CLA.md](CLA.md)** - Required for all contributors
+2. Look for issues labeled `good-first-issue` or `help-wanted`
+3. Comment on the issue to express interest
+4. Wait for maintainer approval before starting work
+5. Ask questions if anything is unclear
 
 ### Setting Up Your Development Environment
 
