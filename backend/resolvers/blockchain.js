@@ -31,7 +31,8 @@ module.exports = {
           logger.warn('⚠️ blockchain_transactions table not found');
           return [];
         }
-        throw error;
+        logger.error('[blockchain] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch transactions', 'DATABASE_ERROR');
       }
     },
 

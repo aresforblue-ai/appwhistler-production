@@ -215,7 +215,13 @@ async function analyzeIPVelocity(ipAddress, pool) {
       WHERE ip_address = $1
     `;
 
-    const result = await pool.query(velocityQuery, [ipAddress]);
+    let result;
+    try {
+      result = await pool.query(velocityQuery, [ipAddress]);
+    } catch (error) {
+      logger.error('[analyzeIPVelocity] Database query failed:', error);
+      return { riskScore: 0, flags: [{ category: 'Database', severity: 'LOW', description: 'Database query failed' }] };
+    }
     const stats = result.rows[0];
 
     let riskScore = 0;

@@ -248,6 +248,12 @@ const typeDefs = gql`
     message: String
   }
 
+  # Change password response type
+  type ChangePasswordPayload {
+    success: Boolean!
+    message: String!
+  }
+
   # URL Analysis result for extension
   type UrlAnalysisResult {
     url: String!
@@ -399,7 +405,7 @@ const typeDefs = gql`
       limit: Int
       offset: Int
     ): AppConnection!
-    
+
     app(id: ID!): App
     trendingApps(limit: Int): [App!]!
     recommendedApps(userId: ID!): [Recommendation!]!
@@ -419,7 +425,7 @@ const typeDefs = gql`
       limit: Int
       offset: Int
     ): FactCheckConnection!
-    
+
     factCheck(id: ID!): FactCheck
     verifyImage(imageUrl: String!): FactCheck
 
@@ -490,6 +496,7 @@ const typeDefs = gql`
     logout: Boolean!
     requestPasswordReset(email: String!): Boolean!
     resetPassword(token: String!, newPassword: String!): Boolean!
+    changePassword(currentPassword: String!, newPassword: String!): ChangePasswordPayload!
 
     # Apps
     addApp(input: AppInput!): App!

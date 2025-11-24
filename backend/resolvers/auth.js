@@ -278,5 +278,57 @@ module.exports = {
 
       return true;
     },
+
+    // Change password for authenticated user
+    changePassword: withErrorHandling(async (_, { currentPassword, newPassword }, context) => {
+      const { userId } = requireAuth(context);
+
+      // Validate new password
+      const passwordValidation = validatePassword(newPassword);
+      if (!passwordValidation.valid) {
+        throw createGraphQLError(passwordValidation.message, 'INVALID_PASSWORD');
+      }
+
+      // Get current user with password hash
+      const userResult = await context.pool.query(
+        'SELECT id, password_hash, email, username FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        throw createGraphQLError('User not found', 'NOT_FOUND');
+      }
+
+      const user = userResult.rows[0];
+
+      // Verify current password
+      const isValidPassword = await bcrypt.compare(currentPassword, user.password_hash);
+      if (!isValidPassword) {
+        throw createGraphQLError('Current password is incorrect', 'BAD_USER_INPUT');
+      }
+
+      // Check if new password is same as current
+      const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
+      if (isSamePassword) {
+        throw createGraphQLError('New password must be different from current password', 'BAD_USER_INPUT');
+      }
+
+      // Hash new password
+      const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+      // Update password
+      await context.pool.query(
+        `UPDATE users
+         SET password_hash = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [newPasswordHash, userId]
+      );
+
+      return {
+        success: true,
+        message: 'Password changed successfully'
+      };
+    }),
   }
 };

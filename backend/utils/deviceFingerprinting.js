@@ -120,7 +120,13 @@ async function detectDeviceReuse(fingerprintHash, pool) {
       GROUP BY device_fingerprint
     `;
 
-    const result = await pool.query(query, [fingerprintHash]);
+    let result;
+    try {
+      result = await pool.query(query, [fingerprintHash]);
+    } catch (error) {
+      logger.error('[deviceFingerprinting] Database query failed:', error);
+      return { riskScore: 0, flags: ['Database error'], newDevice: true };
+    }
 
     if (result.rows.length === 0) {
       return { riskScore: 0, flags: [], newDevice: true };
@@ -334,7 +340,13 @@ async function analyzeDeviceSwitching(userId, pool) {
       GROUP BY user_id
     `;
 
-    const result = await pool.query(query, [userId]);
+    let result;
+    try {
+      result = await pool.query(query, [userId]);
+    } catch (error) {
+      logger.error('[detectDeviceReuse] Database query failed:', error);
+      return { riskScore: 0, flags: ['Database error'] };
+    }
 
     if (result.rows.length === 0) {
       return { riskScore: 0, flags: [] };

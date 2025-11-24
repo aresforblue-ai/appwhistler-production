@@ -41,29 +41,41 @@ module.exports = function createPrivacyRouter(pool) {
 
   // Delete personal data (irreversible)
   router.post('/delete', requireAuth, async (req, res) => {
+    const client = await pool.connect();
     try {
       const userId = req.user.userId;
       const reason = req.body?.reason ? sanitizePlainText(req.body.reason) : null;
 
-      // Remove user-linked content
-      await pool.query('DELETE FROM reviews WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM activity_log WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM auth_tokens WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM recommendations WHERE user_id = $1', [userId]);
-      await pool.query('UPDATE fact_checks SET submitted_by = NULL WHERE submitted_by = $1', [userId]);
-      await pool.query('UPDATE fact_checks SET verified_by = NULL WHERE verified_by = $1', [userId]);
-      await pool.query('UPDATE bounties SET creator_id = NULL WHERE creator_id = $1', [userId]);
-      await pool.query('UPDATE bounties SET claimer_id = NULL WHERE claimer_id = $1', [userId]);
+      // Use transaction to ensure atomicity
+      await client.query('BEGIN');
+
+      // Remove user-linked content (wrapped for better error messages)
+      try {
+        await client.query('DELETE FROM reviews WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM activity_log WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM auth_tokens WHERE user_id = $1', [userId]);
+        await client.query('DELETE FROM recommendations WHERE user_id = $1', [userId]);
+        await client.query('UPDATE fact_checks SET submitted_by = NULL WHERE submitted_by = $1', [userId]);
+        await client.query('UPDATE fact_checks SET verified_by = NULL WHERE verified_by = $1', [userId]);
+        await client.query('UPDATE bounties SET creator_id = NULL WHERE creator_id = $1', [userId]);
+        await client.query('UPDATE bounties SET claimer_id = NULL WHERE claimer_id = $1', [userId]);
+      } catch (deleteError) {
+        await client.query('ROLLBACK');
+        logger.error('[privacy/delete] Failed to delete user data:', deleteError);
+        throw deleteError;
+      }
 
       const safeIdFragment = userId.replace(/-/g, '').slice(0, 12) || 'anon';
       const anonymizedUsername = `deleted_${safeIdFragment}_${Date.now()}`;
       const anonymizedEmail = `deleted+${safeIdFragment}@appwhistler.local`;
       const randomHash = crypto.randomBytes(32).toString('hex');
 
-      const anonymizeResult = await pool.query(
-        `UPDATE users
-         SET username = $2,
-             email = $3,
+      let anonymizeResult;
+      try {
+        anonymizeResult = await client.query(
+          `UPDATE users
+           SET username = $2,
+               email = $3,
              wallet_address = NULL,
              password_hash = $4,
              truth_score = 0,
@@ -72,12 +84,21 @@ module.exports = function createPrivacyRouter(pool) {
              deleted_at = CURRENT_TIMESTAMP
          WHERE id = $1
          RETURNING id`,
-        [userId, anonymizedUsername, anonymizedEmail, randomHash]
-      );
+          [userId, anonymizedUsername, anonymizedEmail, randomHash, reason]
+        );
+      } catch (anonymizeError) {
+        await client.query('ROLLBACK');
+        logger.error('[privacy/delete] Failed to anonymize user:', anonymizeError);
+        throw anonymizeError;
+      }
 
       if (anonymizeResult.rowCount === 0) {
+        await client.query('ROLLBACK');
         return res.status(404).json({ success: false, error: { message: 'User not found.' } });
       }
+
+      // Commit transaction
+      await client.query('COMMIT');
 
       const payload = { reason: reason || null };
       await logPrivacyRequest(pool, {
@@ -89,8 +110,11 @@ module.exports = function createPrivacyRouter(pool) {
 
       return res.json({ success: true, message: 'Account anonymized and scheduled for logout across sessions.' });
     } catch (error) {
+      await client.query('ROLLBACK').catch(() => {});
       logger.error('Privacy deletion failed:', error);
       return res.status(500).json(formatErrorResponse(error, 'INTERNAL_SERVER_ERROR'));
+    } finally {
+      client.release();
     }
   });
 

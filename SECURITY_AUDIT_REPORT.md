@@ -1257,6 +1257,12 @@ async function loadSecretsFromSource() {
 3. Implement refresh token rotation
 4. Fix file upload filename sanitization
 5. Add JWT algorithm specification
+<<<<<<< Updated upstream
+=======
+
+### Medium Priority (Within 1 month)
+
+>>>>>>> Stashed changes
 11. Implement HTTP-only cookie authentication
 12. Add security.txt file
 13. Enhance GraphQL query complexity enforcement

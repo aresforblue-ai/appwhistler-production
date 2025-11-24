@@ -1,6 +1,8 @@
 // Bounty-related resolvers
 const { sanitizePlainText } = require('../utils/sanitizer');
 const { requireAuth } = require('./helpers');
+const { createGraphQLError } = require('../utils/errorHandler');
+const logger = require('../utils/logger');
 
 module.exports = {
   Query: {
@@ -16,7 +18,13 @@ module.exports = {
 
       query += ' ORDER BY created_at DESC';
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[bounties] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch bounties', 'DATABASE_ERROR');
+      }
       return result.rows;
     },
   },

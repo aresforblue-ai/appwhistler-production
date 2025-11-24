@@ -60,7 +60,13 @@ module.exports = {
       query += ` LIMIT $${paramCount++} OFFSET $${paramCount++}`;
       params.push(limit, offset);
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[apps] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch apps', 'DATABASE_ERROR');
+      }
 
       const response = {
         edges: result.rows,
@@ -109,12 +115,12 @@ module.exports = {
     recommendedApps: async (_, { userId }, context) => {
       // SECURITY: Require authentication
       const { userId: authUserId } = requireAuth(context);
-      
+
       // SECURITY: Users can only view their own recommendations
       if (authUserId !== userId && context.user?.role !== 'admin') {
         throw createGraphQLError('Unauthorized: can only view own recommendations', 'FORBIDDEN');
       }
-      
+
       const result = await context.pool.query(
         `SELECT r.*, a.*
          FROM recommendations r
@@ -450,7 +456,13 @@ module.exports = {
       params.push(limit + 1); // Fetch one extra to check hasNextPage
       paramCount++;
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[appsPaginated] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch apps', 'DATABASE_ERROR');
+      }
       const rows = result.rows;
 
       const hasMore = rows.length > limit;

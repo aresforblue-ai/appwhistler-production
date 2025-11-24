@@ -2,6 +2,7 @@
 // Cursor-based pagination utilities for GraphQL resolvers
 
 const { decodeCursor } = require('./cursor');
+const logger = require('./logger');
 
 /**
  * Builds WHERE clause for cursor-based pagination
@@ -146,7 +147,13 @@ async function executePaginationQuery({
   params.push(limit);
 
   // Execute query
-  const result = await pool.query(query, params);
+  let result;
+  try {
+    result = await pool.query(query, params);
+  } catch (error) {
+    logger.error('[paginateQuery] Database query failed:', error);
+    throw new Error('Database query failed: ' + error.message);
+  }
   const rows = result.rows;
 
   // Determine pagination info

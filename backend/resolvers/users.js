@@ -104,7 +104,13 @@ module.exports = {
         RETURNING *
       `;
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[updateProfile] Database query failed:', error);
+        throw createGraphQLError('Failed to update profile', 'DATABASE_ERROR');
+      }
 
       if (result.rows.length === 0) {
         throw createGraphQLError('User not found', 'NOT_FOUND');

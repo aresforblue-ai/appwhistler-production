@@ -45,7 +45,13 @@ module.exports = {
       query += ` LIMIT $${paramCount++} OFFSET $${paramCount++}`;
       params.push(limit, offset);
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[factChecks] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch fact-checks', 'DATABASE_ERROR');
+      }
 
       return {
         edges: result.rows,
@@ -110,7 +116,13 @@ module.exports = {
       params.push(limit + 1); // Fetch one extra to check hasNextPage
       paramCount++;
 
-      const result = await context.pool.query(query, params);
+      let result;
+      try {
+        result = await context.pool.query(query, params);
+      } catch (error) {
+        logger.error('[factChecksPaginated] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch fact-checks', 'DATABASE_ERROR');
+      }
       const rows = result.rows;
 
       const hasMore = rows.length > limit;
@@ -149,14 +161,25 @@ module.exports = {
         }
 
         query += ' ORDER BY created_at DESC LIMIT 100';
-        const result = await context.pool.query(query, params);
+
+        let result;
+        try {
+          result = await context.pool.query(query, params);
+        } catch (dbError) {
+          if (dbError.code === '42P01') {
+            logger.warn('⚠️ fact_check_appeals table not found');
+            return [];
+          }
+          logger.error('[factCheckAppeals] Database query failed:', dbError);
+          throw createGraphQLError('Failed to fetch fact-check appeals', 'DATABASE_ERROR');
+        }
         return result.rows;
       } catch (error) {
-        if (error.code === '42P01') {
-          logger.warn('⚠️ fact_check_appeals table not found');
-          return [];
+        if (error.extensions?.code === 'DATABASE_ERROR') {
+          throw error;
         }
-        throw error;
+        logger.error('[appeals] Database query failed:', error);
+        throw createGraphQLError('Failed to fetch appeals', 'DATABASE_ERROR');
       }
     },
 
@@ -271,22 +294,25 @@ module.exports = {
       }
 
       // Use transaction for atomicity (prevents race conditions)
-      await context.pool.query('BEGIN');
+      // CRITICAL: Use dedicated client to prevent pool contamination
+      const client = await context.pool.connect();
 
       try {
+        await client.query('BEGIN');
+
         // 1. Check if fact-check exists
-        const factCheckResult = await context.pool.query(
+        const factCheckResult = await client.query(
           'SELECT id, upvotes, downvotes FROM fact_checks WHERE id = $1',
           [id]
         );
 
         if (factCheckResult.rows.length === 0) {
-          await context.pool.query('ROLLBACK');
+          await client.query('ROLLBACK');
           throw createGraphQLError('Fact-check not found', 'NOT_FOUND');
         }
 
         // 2. Check if user has already voted
-        const existingVoteResult = await context.pool.query(
+        const existingVoteResult = await client.query(
           'SELECT vote_value FROM fact_check_votes WHERE fact_check_id = $1 AND user_id = $2',
           [id, userId]
         );
@@ -297,7 +323,7 @@ module.exports = {
         // 3. If user is changing vote or voting for first time
         if (previousVoteValue !== vote) {
           // Upsert vote (INSERT or UPDATE if exists)
-          await context.pool.query(
+          await client.query(
             `INSERT INTO fact_check_votes (fact_check_id, user_id, vote_value)
              VALUES ($1, $2, $3)
              ON CONFLICT (fact_check_id, user_id)
@@ -323,7 +349,7 @@ module.exports = {
           }
 
           // Update fact_check counters
-          await context.pool.query(
+          await client.query(
             `UPDATE fact_checks
              SET upvotes = GREATEST(0, upvotes + $1),
                  downvotes = GREATEST(0, downvotes + $2),
@@ -338,10 +364,10 @@ module.exports = {
         }
 
         // Commit transaction
-        await context.pool.query('COMMIT');
+        await client.query('COMMIT');
 
         // 5. Return updated fact-check
-        const updatedFactCheck = await context.pool.query(
+        const updatedFactCheck = await client.query(
           'SELECT * FROM fact_checks WHERE id = $1',
           [id]
         );
@@ -349,9 +375,12 @@ module.exports = {
         return updatedFactCheck.rows[0];
       } catch (error) {
         // Rollback on any error
-        await context.pool.query('ROLLBACK');
+        await client.query('ROLLBACK');
         logger.error('Vote fact-check error:', error);
         throw error;
+      } finally {
+        // CRITICAL: Always release client back to pool
+        client.release();
       }
     }),
 
