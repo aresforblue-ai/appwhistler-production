@@ -142,8 +142,8 @@ Before submitting, please confirm:
 ### 📞 Contact Information (Optional)
 
 If you want credit for this discovery:
-- **GitHub Username**: @your-username
-- **Contact method**: (optional - for follow-up)
+- **GitHub Username**: @aresforblue-ai
+- **Contact method**: (4093089357)
 
 ---
 
