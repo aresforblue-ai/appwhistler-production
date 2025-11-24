@@ -27,8 +27,8 @@ The **AppWhistler** name, logo, and brand assets are trademarks of **Tyler [Your
 
 For permission to use AppWhistler trademarks in your project, documentation, or marketing materials, please contact:
 
-- **Email**: [your-email@example.com]
-- **GitHub**: [Your GitHub profile]
+- **Email**: yappwhistler@icloud.com
+- **GitHub**: https://github.com/aresforblue-ai/appwhistler-production.git
 
 ### Fair Use Examples
 
@@ -63,4 +63,4 @@ For questions or clarification, please open an issue on GitHub or contact the pr
 ---
 
 **Last Updated**: November 2025  
-**Project Maintainer**: Tyler [Your Last Name]
+**Project Maintainer**: Tyler Hughes
