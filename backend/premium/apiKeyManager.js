@@ -2,6 +2,7 @@
 // API key management for premium users
 
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { createGraphQLError } = require('../utils/errorHandler');
 
 /**
@@ -46,7 +47,7 @@ class APIKeyManager {
     const apiKey = `${keyPrefix}_${randomBytes}`;
     
     // Hash the key for storage (never store plain text)
-    const keyHash = crypto.createHash('sha256').update(apiKey).digest('hex');
+    const keyHash = await bcrypt.hash(apiKey, 12);
 
     try {
       const result = await this.pool.query(
