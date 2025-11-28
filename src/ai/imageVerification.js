@@ -13,8 +13,8 @@ class ImageVerifier {
   constructor() {
     this.googleApiKey = getSecret('GOOGLE_CUSTOM_SEARCH_API_KEY');
     this.googleCxId = getSecret('GOOGLE_CUSTOM_SEARCH_CX'); // Custom Search Engine ID
-    this.tineye ApiKey = getSecret('TINEYE_API_KEY');
-    this.tineye ApiUrl = 'https://api.tineye.com/rest/search/';
+    this.tineyeApiKey = getSecret('TINEYE_API_KEY');
+    this.tineyeApiUrl = 'https://api.tineye.com/rest/search/';
   }
 
   /**
