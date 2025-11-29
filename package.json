@@ -39,7 +39,7 @@
   "dependencies": {
     "@huggingface/inference": "^2.6.4",
     "@sentry/node": "^7.108.0",
-    "@sentry/react": "^7.108.0",
+    "@sentry/react": "^10.27.0",
     "@pinata/sdk": "^2.1.0",
     "@sendgrid/mail": "^8.1.6",
     "apollo-server-express": "^3.13.0",
