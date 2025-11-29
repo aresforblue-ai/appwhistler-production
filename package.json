@@ -65,7 +65,7 @@
   "devDependencies": {
     "@babel/parser": "^7.26.3",
     "@babel/traverse": "^7.26.3",
-    "@playwright/test": "^1.50.0",
+    "@playwright/test": "^1.57.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "artillery": "^2.0.0-31",
     "concurrently": "^8.2.2",
