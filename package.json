@@ -55,7 +55,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
     "pg": "^8.11.3",
-    "puppeteer": "^21.6.1",
+    "puppeteer": "^24.31.0",
     "sanitize-html": "^2.17.0",
     "sharp": "^0.34.5",
     "socket.io": "^4.6.2",
