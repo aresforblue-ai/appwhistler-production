@@ -27,6 +27,7 @@ React/Vite (src/frontend) → /graphql (ApolloServer) → context.pool (pg.Pool)
 | SQL injection audit | `npm run audit:sql` |
 | Generate API docs | `npm run docs:graphql` / `npm run docs:rest` |
 | DB migrations | `npm run migrate` / `npm run migrate:down` |
+| New migration | `npm run migration:new` |
 | Deploy contract | `npm run deploy:contract` |
 
 ## Backend Patterns
@@ -55,6 +56,34 @@ Import validators: `validateEmail`, `validatePassword`, `validateUsername`, `val
 
 ### Batch Loading
 Use `context.loaders.userLoader.load(userId)` instead of direct queries for N+1 prevention. Loaders defined in `src/backend/utils/dataLoader.js`.
+
+## Background Jobs (src/backend/queues/)
+```javascript
+// Register workers in server.js
+jobManager.registerWorker('email-jobs', handleEmailJob);
+jobManager.registerWorker('blockchain-jobs', handleBlockchainJob);
+jobManager.registerWorker('fact-check-jobs', handleFactCheckJob);
+
+// Enqueue a job from resolvers
+await jobManager.addJob('email-jobs', { type: 'welcome', userId, email });
+```
+Falls back to in-memory execution when `REDIS_URL` not set (dev/test mode).
+
+## Real-time Updates (Socket.io)
+```javascript
+// Broadcast from resolvers after fact-check completes
+global.broadcastFactCheck(category, factCheckResult);
+// Clients subscribe to rooms: `factchecks:apps`, `factchecks:news`, etc.
+```
+
+## Privacy & Compliance (src/backend/routes/privacy.js)
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/v1/privacy/export` | GDPR data export (returns JSON of user's reviews, fact-checks, bounties, activity) |
+| `POST /api/v1/privacy/delete` | Irreversible account anonymization + content deletion |
+| `GET /api/v1/privacy/policy` | Serves `docs/privacy-policy.md` |
+
+Always use `logPrivacyRequest()` for audit trail when handling user data requests.
 
 ## AI Integration (src/ai/)
 
@@ -104,9 +133,18 @@ jest.mock('@huggingface/inference', () => ({
 }));
 ```
 
+## Database Migrations
+Uses `node-pg-migrate` with config at `database/migration.config.cjs`:
+```bash
+npm run migration:new   # Creates timestamped migration file
+npm run migrate         # Run pending migrations
+npm run migrate:down    # Rollback last migration
+```
+Migration files live in `database/migrations/`. Always test migrations against a copy of production data.
+
 ## Environment Variables
 **Required:** `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`  
-**Optional:** `HUGGINGFACE_API_KEY`, `INFURA_PROJECT_ID`/`ALCHEMY_API_KEY`, `SENTRY_DSN`, `ALLOWED_ORIGINS`  
+**Optional:** `HUGGINGFACE_API_KEY`, `INFURA_PROJECT_ID`/`ALCHEMY_API_KEY`, `SENTRY_DSN`, `ALLOWED_ORIGINS`, `REDIS_URL`  
 **Security:** `PASSWORD_RESET_TOKEN_TTL_MIN` (30), `LOGIN_MAX_FAILED_ATTEMPTS` (5), `LOGIN_LOCKOUT_MINUTES` (15)
 
 Secrets loaded via `src/config/secrets.js` — use `getSecret(key, fallback)` or `requireSecret(key)` (throws if missing).
